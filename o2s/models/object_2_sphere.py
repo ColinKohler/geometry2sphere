@@ -9,8 +9,6 @@ from e3nn import o3
 from e3nn.nn import SO3Activation
 
 from . import e3nn_utils
-from .equiv_gnn import GNN
-from .equiv_gnn_w_attrs import AttrGNN
 from .equiformerv2 import Equiformerv2
 
 
@@ -222,5 +220,5 @@ class Object2Sphere(nn.Module):
 
 
 if __name__ == "__main__":
-    rem = REM(2, 1.8, 107, f=6, encoder="gnn")
-    print(type(rem))
+    o2s = Object2Sphere(2, 1.8, 107, f=6, encoder="gnn")
+    print(type(o2s))
