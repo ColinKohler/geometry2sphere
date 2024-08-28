@@ -2,14 +2,13 @@ from sympy import use
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from einops import rearrange
 
 from e3nn import nn as enn
 from e3nn import o3
 from e3nn.nn import SO3Activation
 
-from . import e3nn_utils
-from .equiformerv2 import Equiformerv2
+from o2s.models import e3nn_utils
+from o2s.models.encoders.equiformerv2 import Equiformerv2
 
 
 class MLP(nn.Module):
