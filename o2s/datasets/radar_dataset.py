@@ -130,8 +130,8 @@ class RadarDataset(Dataset):
             sample = (
                 mesh,
                 response,
-                torch.Tensor(samp["mesh_vertices"]),
-                torch.Tensor(samp["mesh_faces"]),
+                torch.Tensor(samp["rep_mesh_vertices"]),
+                torch.Tensor(samp["rep_mesh_faces"]),
             )
         else:
             sample = (mesh, response)
@@ -139,4 +139,4 @@ class RadarDataset(Dataset):
         return sample
 
     def __len__(self):
-        return len(self.data_dict["mesh_vertices"])
+        return len(self.data_dict["rep_mesh_vertices"])

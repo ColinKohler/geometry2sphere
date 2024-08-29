@@ -50,23 +50,38 @@ class Mesh2Sphere(nn.Module):
                 for p in [-1, 1]
             ]
         )
-        self.encoder = Equiformerv2(lmax_list=[output_lmax], max_radius=max_radius)
+        self.encoder = Equiformerv2(
+            num_layers=6, num_heads=4, lmax_list=[latent_lmax], max_radius=max_radius
+        )
         # self.irreps_enc_out = e3nn_utils.s2_irreps(z_lmax)
 
         self.spherical_cnn = SphericalCNN(
-            latent_lmax, output_lmax, latent_feat_dim, num_out_spheres
+            [latent_lmax, latent_lmax, latent_lmax, output_lmax],
+            [latent_feat_dim, 128, 256, num_out_spheres],
         )
-        self.sh = SphericalHarmonics(self.lmax_out, num_lat=0, num_lon=0)
+        self.sh = SphericalHarmonics(output_lmax, output_lmax, num_lat=32, num_lon=32)
 
         self.use_mlp = use_mlp
         if self.use_mlp:
-            self.mlp = MLP(hidden_dim=mlp_hidden_dim, input_dim=self.out_dim)
+            self.mlp = MLP(mlp_hidden_dim)
 
     def forward(self, x):
-        batch_size = x.batch.max() + 1
         z = self.encoder(x)
         w = self.spherical_cnn(z)
-        out = self.sh(w)
+        print(w)
+        w = torch.concat(
+            [
+                w[:, 0].view(1, 1),
+                w[:, 2:4],
+                w[:, 6:9],
+                w[:, 9].view(1, 1),
+                w[:, 11:13],
+                w[:, 15:],
+            ],
+            dim=1,
+        )
+        print(w)
+        out = self.sh(w.view(1,3,3,2)
 
         return out, w
 
