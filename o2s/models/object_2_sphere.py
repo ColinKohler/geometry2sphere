@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from e3nn import nn as enn
 from e3nn import o3
 
-from torch_harmonics.spherical_harmonics import SphericalHarmonics
+from torch_harmonics.spherical_harmonics_old import SphericalHarmonics
 
 from o2s.models import e3nn_utils
 from o2s.models.modules import MLP, SphericalCNN
@@ -51,15 +51,21 @@ class Mesh2Sphere(nn.Module):
             ]
         )
         self.encoder = Equiformerv2(
-            num_layers=6, num_heads=4, lmax_list=[latent_lmax], max_radius=max_radius
+            num_layers=6,
+            num_heads=4,
+            sphere_channels=latent_feat_dim,
+            lmax_list=[latent_lmax],
+            max_radius=max_radius,
         )
         # self.irreps_enc_out = e3nn_utils.s2_irreps(z_lmax)
 
         self.spherical_cnn = SphericalCNN(
-            [latent_lmax, latent_lmax, latent_lmax, output_lmax],
-            [latent_feat_dim, 128, 256, num_out_spheres],
+            [latent_lmax, 5, 8, output_lmax],
+            [latent_feat_dim, 16, 8, num_out_spheres],
         )
-        self.sh = SphericalHarmonics(output_lmax, output_lmax, num_lat=32, num_lon=32)
+        self.sh = SphericalHarmonics(
+            output_lmax, output_lmax + 1, num_lat=61, num_lon=21
+        )
 
         self.use_mlp = use_mlp
         if self.use_mlp:
@@ -68,20 +74,19 @@ class Mesh2Sphere(nn.Module):
     def forward(self, x):
         z = self.encoder(x)
         w = self.spherical_cnn(z)
-        print(w)
-        w = torch.concat(
-            [
-                w[:, 0].view(1, 1),
-                w[:, 2:4],
-                w[:, 6:9],
-                w[:, 9].view(1, 1),
-                w[:, 11:13],
-                w[:, 15:],
-            ],
-            dim=1,
-        )
-        print(w)
-        out = self.sh(w.view(1,3,3,2)
+        # w = torch.concat(
+        #    [
+        #        w[:, 0].view(1, 1),
+        #        w[:, 2:4],
+        #        w[:, 6:9],
+        #        w[:, 9].view(1, 1),
+        #        w[:, 11:13],
+        #        w[:, 15:],
+        #    ],
+        #    dim=1,
+        # )
+        # out = self.sh(w.view(1, 2, 3, 2))
+        out = self.sh(w)
 
         return out, w
 

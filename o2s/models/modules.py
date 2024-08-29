@@ -111,8 +111,8 @@ class SO3ToS2Convolution(nn.Module):
         )
         self.lin = o3.Linear(
             e3nn_utils.so3_irreps(lmax_in),
-            # e3nn_utils.s2_irreps(lmax_out),
-            s2_irreps,
+            e3nn_utils.s2_irreps(lmax_out),
+            # s2_irreps,
             f_in=f_in,
             f_out=f_out,
         )
@@ -139,6 +139,7 @@ class SphericalCNN(nn.Module):
         grid_so3 = e3nn_utils.so3_near_identity_grid()
 
         self.s2_conv = S2Convolution(feat[0], feat[0], lmax[0], grid_s2)
+        self.s2_act = SO3Activation(lmax[0], lmax[0], torch.relu, resolution=N)
 
         layers: list = []
         for i, (f, f_) in enumerate(zip(feat[:-1], feat[1:-1])):
@@ -167,6 +168,7 @@ class SphericalCNN(nn.Module):
 
     def forward(self, x):
         x = self.s2_conv(x)
+        x = self.s2_act(x)
         x = self.so3_conv(x)
         x = self.lin(x)
 

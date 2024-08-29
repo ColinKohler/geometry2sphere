@@ -93,13 +93,13 @@ class RadarDataset(Dataset):
     def __getitem__(self, idx):
         samp = {x: self.data_dict[x][idx] for x in self.data_dict}
         mesh = trimesh.Trimesh(
-            vertices=samp["rep_mesh_vertices"],
-            faces=samp["rep_mesh_faces"],
+            vertices=samp["rep_mesh_vertices"][0],
+            faces=samp["rep_mesh_faces"][0],
             validate=False,
-            process=False,
+            process=True,
         )
-        vertices = torch.tensor(mesh.vertices, dtype=torch.get_default_dtype())[0]
-        edges = torch.tensor(mesh.edges).T
+        vertices = torch.tensor(mesh.vertices, dtype=torch.get_default_dtype())
+        edges = torch.tensor(mesh.edges_unique).T
         edge_vec = vertices[edges[0]] - vertices[edges[1]]
         mesh = Data(
             pos=vertices,
