@@ -142,12 +142,10 @@ def so3_near_identity_grid(
     return torch.stack((A, B, C))
 
 
-# L^2 * S^2 -> natural decomposition for a signal over S^2
 def s2_irreps(lmax):
     return o3.Irreps([(1, (l, 1)) for l in range(lmax + 1)])
 
 
-# L^2 * SO(3) -> natural decomposition for a signal over SO(3)
 def so3_irreps(lmax):
     return o3.Irreps([(2 * l + 1, (l, 1)) for l in range(lmax + 1)])
 

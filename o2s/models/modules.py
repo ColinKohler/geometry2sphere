@@ -37,8 +37,35 @@ class MLP(nn.Module):
         return self.mlp(x)
 
 
+class S2Convolution(torch.nn.Module):
+    """S2 Convolution"""
+
+    def __init__(self, f_in, f_out, lmax, kernel_grid) -> None:
+        super().__init__()
+        self.register_parameter(
+            "w", torch.nn.Parameter(torch.randn(f_in, f_out, kernel_grid.shape[1]))
+        )  # [f_in, f_out, n_s2_pts]
+        self.register_buffer(
+            "Y",
+            o3.spherical_harmonics_alpha_beta(
+                range(lmax + 1), *kernel_grid, normalization="component"
+            ),
+        )  # [n_s2_pts, psi]
+        self.lin = o3.Linear(
+            e3nn_utils.s2_irreps(lmax),
+            e3nn_utils.so3_irreps(lmax),
+            f_in=f_in,
+            f_out=f_out,
+            internal_weights=False,
+        )
+
+    def forward(self, x):
+        psi = torch.einsum("ni,xyn->xyi", self.Y, self.w) / self.Y.shape[0] ** 0.5
+        return self.lin(x, weight=psi)
+
+
 class SO3Convolution(nn.Module):
-    """SO3 Convolutionl
+    """SO3 Convolution
 
     Args:
         f_in:
@@ -69,7 +96,6 @@ class SO3Convolution(nn.Module):
         )
 
     def forward(self, x):
-        # S2 DFT (matrix mulitplication)
         psi = torch.einsum("ni,xyn->xyi", self.D, self.w) / self.D.shape[0] ** 0.5
         return self.lin(x, weight=psi)
 
@@ -77,11 +103,16 @@ class SO3Convolution(nn.Module):
 class SO3ToS2Convolution(nn.Module):
     """SO3 to S2 Linear Layer"""
 
-    def __init__(self, f_in: int, f_out: int, lmax_in: int, lmax_out: int):
+    def __init__(self, f_in: int, f_out: int, lmax_in: int, lmax_out: int, kernel_grid):
         super().__init__()
+        s2_irreps = o3.Irreps(
+            [(1, (l, 1)) for l in range(lmax_out + 1)]
+            + [(1, (l, 1)) for l in range(lmax_out + 1)]
+        )
         self.lin = o3.Linear(
             e3nn_utils.so3_irreps(lmax_in),
-            e3nn_utils.s2_irreps(lmax_out),
+            # e3nn_utils.s2_irreps(lmax_out),
+            s2_irreps,
             f_in=f_in,
             f_out=f_out,
         )
@@ -101,13 +132,18 @@ class SphericalCNN(nn.Module):
     def __init__(self, lmax: List[int], feat: List[int], N: int = 8):
         super().__init__()
 
+        # Need the same number of lmax and feats for layers
+        assert len(lmax) == len(feat)
+
         grid_s2 = e3nn_utils.s2_near_identity_grid()
         grid_so3 = e3nn_utils.so3_near_identity_grid()
+
+        self.s2_conv = S2Convolution(feat[0], feat[0], lmax[0], grid_s2)
 
         layers: list = []
         for i, (f, f_) in enumerate(zip(feat[:-1], feat[1:-1])):
             layers.append(
-                e3nn_utils.SO3Convolution(
+                SO3Convolution(
                     f,
                     f_,
                     lmax_in=lmax[i],
@@ -121,11 +157,16 @@ class SphericalCNN(nn.Module):
             )
         self.so3_conv = nn.Sequential(*layers)
 
-        self.lin = e3nn_utils.SO3ToS2Convolution(
-            feat[-2], feat[-1], lmax_in=lmax[-2], lmax_out=lmax[-1], kernel_grid=grid_s2
+        self.lin = SO3ToS2Convolution(
+            feat[-2],
+            feat[-1],
+            lmax_in=lmax[-2],
+            lmax_out=lmax[-1],
+            kernel_grid=grid_so3,
         )
 
     def forward(self, x):
+        x = self.s2_conv(x)
         x = self.so3_conv(x)
         x = self.lin(x)
 
