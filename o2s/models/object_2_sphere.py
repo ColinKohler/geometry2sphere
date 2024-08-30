@@ -53,15 +53,15 @@ class Mesh2Sphere(nn.Module):
         self.encoder = Equiformerv2(
             num_layers=6,
             num_heads=4,
-            sphere_channels=latent_feat_dim,
+            ffn_hidden_channels=latent_feat_dim,
             lmax_list=[latent_lmax],
             max_radius=max_radius,
         )
         # self.irreps_enc_out = e3nn_utils.s2_irreps(z_lmax)
 
         self.spherical_cnn = SphericalCNN(
-            [latent_lmax, 5, 8, output_lmax],
-            [latent_feat_dim, 16, 8, num_out_spheres],
+            [latent_lmax, latent_lmax, latent_lmax, output_lmax],
+            [latent_feat_dim, 64, 32, num_out_spheres],
         )
         self.sh = SphericalHarmonics(
             output_lmax, output_lmax + 1, num_lat=61, num_lon=21

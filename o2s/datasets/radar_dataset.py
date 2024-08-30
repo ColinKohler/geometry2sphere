@@ -99,7 +99,7 @@ class RadarDataset(Dataset):
             process=True,
         )
         vertices = torch.tensor(mesh.vertices, dtype=torch.get_default_dtype())
-        edges = torch.tensor(mesh.edges_unique).T
+        edges = torch.tensor(mesh.edges_unique).T[:, :-1]
         edge_vec = vertices[edges[0]] - vertices[edges[1]]
         mesh = Data(
             pos=vertices,
@@ -108,16 +108,17 @@ class RadarDataset(Dataset):
             edge_vec=edge_vec,
         )
 
-        response = torch.view_as_complex(
-            torch.stack(
-                [
-                    torch.tensor(samp["rti"])[:, :, :, 0],
-                    torch.tensor(samp["rti"])[:, :, :, 1],
-                ]
-            )
-            .permute(3, 1, 2, 0)
-            .contiguous()
-        )
+        response = torch.tensor(samp["rti"][:, :, :, 0]).permute(2, 0, 1)
+        # response = torch.view_as_complex(
+        #    torch.stack(
+        #        [
+        #            torch.tensor(samp["rti"])[:, :, :, 0],
+        #            torch.tensor(samp["rti"])[:, :, :, 1],
+        #        ]
+        #    )
+        #    .permute(3, 1, 2, 0)
+        #    .contiguous()
+        # )
         if self.transform is not None:
             if self.seed is not None:
                 rng = npr.default_rng([self.seed, abs(idx)])
