@@ -1,0 +1,112 @@
+# @package _global_
+
+# defaults:
+#   - _self_
+#   - data: radar
+#   - module: rem
+#   - trainer: default
+
+experiment_name: ???  #Override this
+ROOT_DATA_PATH: '/home/pu.patel/Desktop/DE-RM/data'
+RESULTS_PATH: '/home/pu.patel/Desktop/DE-RM/results_ffm'
+batch_size: 8
+num_workers: 12
+
+train_dataset:
+  _target_: o2s.datasets.radar_dataset.RadarDataset
+  root: ${ROOT_DATA_PATH}/mesh_conic_xarray_v1  #TODO: add dataset name
+  stage: train
+  mesh_mode: simple
+  orientation_mode: single
+  transform:
+    _target_: o2s.datasets.transforms.general.Compose
+    transforms:
+      - _target_: o2s.datasets.transforms.radar.Abs
+      - _target_: o2s.datasets.transforms.radar.Log
+      - _target_: o2s.datasets.transforms.radar.Center
+        mean: -7.352605819702148 #TODO: Verify the values
+        std: 2.067737340927124
+
+val_dataset:
+  _target_: o2s.datasets.radar_dataset.RadarDataset
+  root: ${ROOT_DATA_PATH}/mesh_conic_xarray_v1  #TODO: add dataset name
+  stage: val
+  mesh_mode: simple
+  orientation_mode: single
+  transform:
+    _target_: o2s.datasets.transforms.general.Compose
+    transforms:
+      - _target_: o2s.datasets.transforms.radar.Abs
+      - _target_: o2s.datasets.transforms.radar.Log
+      - _target_: o2s.datasets.transforms.radar.Center
+        mean: -7.352605819702148 #TODO: Verify the values
+        std: 2.067737340927124
+
+test_dataset:
+  _target_: o2s.datasets.radar_dataset.RadarDataset
+  root: ${ROOT_DATA_PATH}/test_mesh_conic_xarray_v1  #TODO: add dataset name
+  stage: test
+  mesh_mode: simple
+  orientation_mode: single
+  transform:
+    _target_: o2s.datasets.transforms.general.Compose
+    transforms:
+      - _target_: o2s.datasets.transforms.radar.Abs
+      - _target_: o2s.datasets.transforms.radar.Log
+      - _target_: o2s.datasets.transforms.radar.Center
+        mean: -7.352605819702148 #TODO: Verify the values
+        std: 2.067737340927124
+  
+
+module:
+  _target_: o2s.lightning.rem.REMLightningModule
+
+  backbone: 
+    _target_: o2s.models.object_2_sphere.Mesh2Sphere
+    latent_lmax: 6
+    output_lmax: 25
+    latent_feat_dim: 128
+    max_radius: 1.8
+    num_out_spheres: 1
+    use_mlp: True
+    mlp_hidden_dim: [256, 512, 512] 
+
+  criterion:
+    _target_: o2s.lightning.rem.SoftmaxWeightedMSELoss
+    reduction: sum
+
+  optim:
+    optimizer: 
+      _target_: torch.optim.AdamW
+      _partial_: True
+      lr: 0.02
+      weight_decay: 1e-5
+    lr_scheduler:
+      _target_: torch.optim.lr_scheduler.StepLR
+      _partial_: True
+      gamma: 0.1
+      step_size: 15
+    frequency: 1
+
+trainer:
+  _target_: pytorch_lightning.trainer.Trainer
+
+  devices: auto
+  accelerator: cuda
+  strategy: ddp
+  num_nodes: 1
+  max_epochs: 20
+  gradient_clip_val: 0.5
+  logger:
+    _target_: pytorch_lightning.loggers.MLFlowLogger
+    experiment_name: ${experiment_name}
+    run_name: ${now:%Y-%m-%d-%H-%M-%S}
+    tracking_uri: ${RESULTS_PATH}
+    log_model: True
+  callbacks:
+    - _target_: pytorch_lightning.callbacks.ModelCheckpoint
+      dirpath: "."
+      filename: "model_{epoch}"
+      monitor: "val/loss"
+      save_last: True
+    - _target_: pytorch_lightning.callbacks.LearningRateMonitor

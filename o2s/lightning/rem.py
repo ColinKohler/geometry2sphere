@@ -12,13 +12,13 @@ from o2s.metrics.metrics import (
 )
 
 from o2s.typing import PartialOptimDict
-from _base import _BaseLogging, _BaseModule
+from o2s.lightning._base import _BaseLogging, _BaseModule
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class REMLightningModule(_BaseModule, _BaseLogging, pl.LightningModule):
+class REMLightningModule(_BaseModule, pl.LightningModule):
     def __init__(
         self,
         *,
@@ -163,46 +163,16 @@ class REMLightningModule(_BaseModule, _BaseLogging, pl.LightningModule):
 
 
 class SoftmaxWeightedMSELoss(nn.Module):
-    def __init__(self):
+    def __init__(self, reduction='sum'):
         super().__init__()
+        self.reduction = reduction
 
     def forward(self, pred, target):
         weight = nn.functional.softmax(target, dim=1)
-        loss = weight * (pred - target) ** 2
-        return loss.sum()
-
-
-def get_data_transitions(data):
-    max_vals, _ = data.abs().max(dim=1)
-    data = data / (
-        max_vals[:, None] + 1e-7
-    )  # normalize by max value to ensure measuring relative smoothness, not size
-    transitions = (data[:, :-1] - data[:, 1:]).abs()
-    return transitions
-
-
-class SoftmaxWeightedSmoothingMSELoss(nn.Module):
-    def __init__(self, mse_weight=1):
-        super().__init__()
-
-        self.mse_weight = mse_weight
-
-    def forward(self, pred, target):
-        # loss = (pred - target)**2 * (target*30+0.2)
-        # calculate MSE loss
-        weight = nn.functional.softmax(target, dim=1)
-        mse_loss = (weight * (pred - target) ** 2).sum()
-
-        # calculate smoothing loss
-        transitions_per_sample = pred.numel() - pred.size()[0]
-
-        pred_transitions = get_data_transitions(pred)
-        target_transitions = get_data_transitions(target)
-
-        transition_mse_loss = (
-            (pred_transitions - target_transitions) ** 2
-        ).sum() / transitions_per_sample
-
-        loss = self.mse_weight * mse_loss + transition_mse_loss
-
-        return loss
+        loss = weight*(pred - target)**2
+        if self.reduction == 'sum':
+            return loss.sum()
+        elif self.reduction == 'mean':
+            return loss.mean()
+        else:  # Assume no reduction function required
+            return loss

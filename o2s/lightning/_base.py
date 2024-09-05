@@ -10,7 +10,7 @@ from omegaconf import ListConfig
 from pytorch_lightning.loggers import MLFlowLogger
 from torch import nn
 
-from lr_scheduler import get_cosine_schedule_with_warmup, cosinewithWarmUp
+from o2s.lightning.lr_scheduler import get_cosine_schedule_with_warmup, cosinewithWarmUp
 from o2s.typing import OptimDict, PartialOptimDict
 import logging
 
