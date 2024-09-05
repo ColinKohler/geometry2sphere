@@ -19,7 +19,12 @@ def train(cfg: DictConfig) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     val_dataset: Dataset = instantiate(cfg.val_dataset)
     test_dataset: Dataset = instantiate(cfg.test_dataset)
     datamodule: LightningDataModule = DataModule(
-        dataset=train_dataset, val_dataset=val_dataset, test_dataset=test_dataset, batch_size=cfg.batch_size, num_workers=cfg.num_workers)
+        dataset=train_dataset,
+        val_dataset=val_dataset,
+        test_dataset=test_dataset,
+        batch_size=cfg.batch_size,
+        num_workers=cfg.num_workers,
+    )
     module: LightningModule = hydra.utils.instantiate(cfg.module)
     trainer: Trainer = hydra.utils.instantiate(cfg.trainer)
 
@@ -35,7 +40,7 @@ def train(cfg: DictConfig) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     log_hyperparameters(object_dict)
 
     trainer.fit(model=module, datamodule=datamodule)
-    trainer.test(model=module, datamodule=datamodule, ckpt_path='best')
+    trainer.test(model=module, datamodule=datamodule, ckpt_path="best")
     module.save_metrics()
 
 

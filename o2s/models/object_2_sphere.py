@@ -79,8 +79,10 @@ class Mesh2Sphere(nn.Module):
             self.mlp = MLP(mlp_hidden_dim)
 
     def forward(self, x):
+        B = x.batch_size
+
         z = self.encoder(x)
-        w = self.spherical_cnn(z)
+        w = self.spherical_cnn(z.view(B, 1, -1))
         w = self.lin(w)
         # w = torch.concat(
         #    [
@@ -94,7 +96,7 @@ class Mesh2Sphere(nn.Module):
         #    dim=1,
         # )
         # out = self.sh(w.view(1, 2, 3, 2))
-        out = self.sh(w)
+        out = self.sh(w.squeeze())
         if self.use_mlp:
             out = self.mlp(out.float().view(1, -1)).view(61, 21)
 

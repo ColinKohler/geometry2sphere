@@ -49,31 +49,26 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
         self,
         batch: Dict[str, Tensor],
         stage: str,
-        advanced_metrics: bool = True,
+        advanced_metrics: bool = False,
         ks: List[int] = [1, 2],
     ):
-        if self.backbone.invariant_out:
-            loss = self.calculate_invariant_loss(
-                batch, stage, advanced_metrics, ks)
-        else:
-            loss = self.calculate_equivariant_loss(
-                batch, stage, advanced_metrics, ks)
+        loss = self.calculate_equivariant_loss(batch, stage, advanced_metrics, ks)
 
         return loss
 
     def calculate_equivariant_loss(self, batch, stage, advanced_metrics, ks):
-        data, poses, target = batch
-        b = poses.size(0)
-        pred = self.forward(data)
+        data, target = batch
+        b = target.size(0)
+
+        target = target[:, 53]
+        pred, _ = self.forward(data)
 
         loss = 0
         mse = 0
-        pred_range_profile = self.backbone.getResponse(
-            pred, poses.to(tr.float32))
-        loss += self.criterion(pred_range_profile, target)
-        mse += self.calculate_mse(pred_range_profile, target)
+        loss += self.criterion(pred, target)
+        mse += self.calculate_mse(pred, target)
 
-        if stage == 'train':
+        if stage == "train":
             lr = 0
             for group in self.optimizers().optimizer.param_groups:
                 lr = group["lr"]
@@ -99,19 +94,13 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
 
         if advanced_metrics:
             base_score = 0
-            maxima_val_score, maxima_dist_score = [
-                0 for k in ks], [0 for k in ks]
+            maxima_val_score, maxima_dist_score = [0 for k in ks], [0 for k in ks]
             peak_val_score, peak_dist_score = [0 for k in ks], [0 for k in ks]
-            base_score += calculated_base_matching_score(
-                target, pred_range_profile)
+            base_score += calculated_base_matching_score(target, pred)
 
             for i, k in enumerate(ks):
-                mvs, mds = maxima_matching_score(
-                    target, pred_range_profile, k=k
-                )
-                pvs, pds = calculated_peak_matching_score(
-                    target, pred_range_profile, max_num_peaks=k
-                )
+                mvs, mds = maxima_matching_score(target, pred, k=k)
+                pvs, pds = calculated_peak_matching_score(target, pred, max_num_peaks=k)
                 maxima_val_score[i] += mvs
                 maxima_dist_score[i] += mds
                 peak_val_score[i] += pvs
@@ -163,16 +152,16 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
 
 
 class SoftmaxWeightedMSELoss(nn.Module):
-    def __init__(self, reduction='sum'):
+    def __init__(self, reduction="sum"):
         super().__init__()
         self.reduction = reduction
 
     def forward(self, pred, target):
         weight = nn.functional.softmax(target, dim=1)
-        loss = weight*(pred - target)**2
-        if self.reduction == 'sum':
+        loss = weight * (pred - target) ** 2
+        if self.reduction == "sum":
             return loss.sum()
-        elif self.reduction == 'mean':
+        elif self.reduction == "mean":
             return loss.mean()
         else:  # Assume no reduction function required
             return loss

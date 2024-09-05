@@ -43,7 +43,7 @@ class RadarDataset(MeshXarrayDataset):
         padding_value: int = -10,
         upfront_compute: bool = False,
         compute_before_return: bool = True,
-        return_mesh: bool = True,
+        return_mesh: bool = False,
         **kwargs,
     ):
         self.return_mesh = return_mesh
@@ -79,17 +79,23 @@ class RadarDataset(MeshXarrayDataset):
             process=True,
         )
         vertices = torch.tensor(mesh.vertices, dtype=torch.get_default_dtype())
-        edges = torch.tensor(mesh.edges_unique).T[:, :-1]
+        edges = torch.tensor(mesh.edges_unique).T
         edge_vec = vertices[edges[0]] - vertices[edges[1]]
+
+        non_zero_edge_idx = torch.where(edge_vec.sum(1) != 0)[0]
+        non_zero_edges = edges[:, non_zero_edge_idx]
+        non_zero_edge_vec = edge_vec[non_zero_edge_idx]
+
         mesh = Data(
             pos=vertices,
             x=torch.ones(len(vertices), 1),
-            edge_index=edges,
-            edge_vec=edge_vec,
+            edge_index=non_zero_edges,
+            edge_vec=non_zero_edge_vec,
         )
-        response = torch.tensor(torch.view_as_real(data.data)[:, :, :, 0]).permute(
-            2, 0, 1
-        )
+        response = data.data.permute(2, 0, 1)
+        # response = torch.tensor(torch.view_as_real(data.data)[:, :, :, 0]).permute(
+        #    2, 0, 1
+        # )
 
         if self.return_mesh:
             sample = (

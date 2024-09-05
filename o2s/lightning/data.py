@@ -1,7 +1,8 @@
 from typing import Optional, Callable
 
 import pytorch_lightning as pl
-from torch_geometric.data import DataLoader, Dataset
+from torch_geometric.data import Dataset
+from torch_geometric.loader import DataLoader
 from torch.utils.data import DataLoader as StandardDataLoader
 import logging
 
@@ -34,7 +35,7 @@ class DataModule(pl.LightningDataModule):
             self.dataloader_class = StandardDataLoader
 
     def train_dataloader(self) -> Optional[DataLoader]:
-        log.info('returning training dataloader')
+        log.info("returning training dataloader")
         if self.dataset is not None:
             return self.dataloader_class(
                 self.dataset,
@@ -46,7 +47,7 @@ class DataModule(pl.LightningDataModule):
             )
 
     def val_dataloader(self) -> Optional[DataLoader]:
-        log.info('returning val dataloader')
+        log.info("returning val dataloader")
         if self.val_dataset is not None:
             return self.dataloader_class(
                 self.val_dataset,
@@ -58,7 +59,7 @@ class DataModule(pl.LightningDataModule):
             )
 
     def test_dataloader(self) -> Optional[DataLoader]:
-        log.info('returning test dataloader')
+        log.info("returning test dataloader")
         if self.test_dataset is not None:
             return self.dataloader_class(
                 self.test_dataset,
@@ -70,7 +71,7 @@ class DataModule(pl.LightningDataModule):
             )
 
     def predict_dataloader(self) -> Optional[DataLoader]:
-        log.info('returning predict dataloader')
+        log.info("returning predict dataloader")
         if self.test_dataset is not None:
             return self.dataloader_class(
                 self.test_dataset,
