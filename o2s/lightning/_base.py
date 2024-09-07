@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from torch import Tensor
 import json
 import pytorch_lightning as pl
+import hydra
 from hydra_zen import load_from_yaml
 from omegaconf import ListConfig
 from pytorch_lightning.loggers import MLFlowLogger
@@ -15,84 +16,6 @@ from o2s.typing import OptimDict, PartialOptimDict
 import logging
 
 log = logging.getLogger(__name__)
-
-
-class _BaseLogging:
-    logger: Optional[MLFlowLogger]
-    ckpt: Optional[str]
-    trainer: pl.Trainer
-
-    def _mlflow_load_params(self):
-        assert isinstance(self.logger, MLFlowLogger)
-
-        cfg = Path.cwd() / ".hydra/config.yaml"
-        self.logger.experiment.log_artifact(
-            self.logger.run_id, str(cfg), artifact_path="configs"
-        )
-
-        hydra_cfg = Path.cwd() / ".hydra/hydra.yaml"
-        self.logger.experiment.log_artifact(
-            self.logger.run_id, str(hydra_cfg), artifact_path="configs"
-        )
-
-        overrides_cfg = Path.cwd() / ".hydra/overrides.yaml"
-        self.logger.experiment.log_artifact(
-            self.logger.run_id, str(overrides_cfg), artifact_path="configs"
-        )
-
-        choices_logged = []
-        hydra_cfg = load_from_yaml(hydra_cfg)
-        for choice, value in hydra_cfg.hydra.runtime.choices.items():
-            if "hydra/" in choice:
-                continue
-
-            choices_logged.append(choice)
-
-            self.logger.experiment.log_param(
-                self.logger.run_id,
-                choice.replace("/", "_"),
-                value,
-            )
-
-        overrides = load_from_yaml(overrides_cfg)
-        assert isinstance(overrides, ListConfig)
-        for o in overrides:
-            param, val = o.split("=", 1)
-            param = param.replace("+", "")
-
-            if param in choices_logged:
-                continue
-
-            param = param.replace("/", "_")
-            self.logger.experiment.log_param(self.logger.run_id, param, val)
-
-    def on_fit_start(self) -> None:
-        self._mlflow_load_params()
-
-    def on_test_start(self) -> None:
-        self._mlflow_load_params()
-
-    def _log_checkpoint(self):
-        log.info("Logging checkpoint function called")
-        log.info(self.trainer.current_epoch)
-        if self.trainer.current_epoch % 10 == 0:
-            assert isinstance(self.logger, MLFlowLogger)
-            from pathlib import Path
-
-            ckpts = list(Path.cwd().glob("**/*.ckpt"))
-            path = str(Path.cwd())
-            log.info(f"ckpts found: {len(ckpts)}")
-            log.info(f"ckpt path: {path}")
-            if len(ckpts) >= 1:
-                ckpt = ckpts[0]
-                log.info(f"saving {str(ckpt)}")
-                self.logger.experiment.log_artifact(
-                    self.logger.run_id, str(ckpt), artifact_path="models"
-                )
-
-    def on_fit_end(self):
-        self._log_checkpoint()
-
 
 class _BaseModule(ABC):
     backbone: nn.Module
@@ -133,7 +56,9 @@ class _BaseModule(ABC):
         )
 
     def save_metrics(self):
-        with open("metrics.json", "w") as f:
+        hydra_output_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+        metric = Path(hydra_output_dir + "metric.json")
+        with open(metric, "w") as f:
             json.dump(self.metrics_epoch, f)
 
     def configure_optimizers(self) -> Optional[OptimDict]:

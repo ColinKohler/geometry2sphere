@@ -14,7 +14,7 @@ num_workers: 12
 
 train_dataset:
   _target_: o2s.datasets.radar_dataset.RadarDataset
-  root: ${ROOT_DATA_PATH}/test_dataset.nc  #TODO: add dataset name
+  root: ${ROOT_DATA_PATH}/train_dataset.nc #TODO: add dataset name
   stage: train
   mesh_mode: simple
   orientation_mode: full 
@@ -29,7 +29,7 @@ train_dataset:
 
 val_dataset:
   _target_: o2s.datasets.radar_dataset.RadarDataset
-  root: ${ROOT_DATA_PATH}/test_dataset.nc  #TODO: add dataset name
+  root: ${ROOT_DATA_PATH}/train_dataset.nc  #TODO: add dataset name
   stage: val
   mesh_mode: simple
   orientation_mode: full
@@ -99,9 +99,8 @@ trainer:
   logger:
     _target_: pytorch_lightning.loggers.MLFlowLogger
     experiment_name: ${experiment_name}
-    run_name: ${now:%Y-%m-%d-%H-%M-%S}
-    tracking_uri: ${RESULTS_PATH}
-    log_model: True
+    run_name: ${experiment_name}/${now:%Y-%m-%d-%H-%M-%S}
+    tracking_uri: ${RESULTS_PATH}/mlflow/
   callbacks:
     - _target_: pytorch_lightning.callbacks.ModelCheckpoint
       dirpath: "."
@@ -109,3 +108,8 @@ trainer:
       monitor: "val/loss"
       save_last: True
     - _target_: pytorch_lightning.callbacks.LearningRateMonitor
+
+
+hydra:
+  run:
+    dir: ${RESULTS_PATH}/hydra/${experiment_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}

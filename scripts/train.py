@@ -1,20 +1,21 @@
 from typing import Any, Dict, List, Optional, Tuple
 
+import os
 import hydra
 import pytorch_lightning as pl
-import torch
+from pathlib import Path
 from pytorch_lightning import LightningDataModule, LightningModule, Trainer
 from torch_geometric.data import Dataset
 from omegaconf import DictConfig
 from hydra.utils import instantiate
-from o2s.utils.logging_utils import log_hyperparameters
 from o2s.lightning.data import DataModule
-from rai_toolbox.mushin.lightning.launchers import HydraConfig
 
 
 def train(cfg: DictConfig) -> Tuple[Dict[str, Any], Dict[str, Any]]:
 
     pl.seed_everything(42)
+    
+    
     train_dataset: Dataset = instantiate(cfg.train_dataset)
     val_dataset: Dataset = instantiate(cfg.val_dataset)
     test_dataset: Dataset = instantiate(cfg.test_dataset)
@@ -28,25 +29,19 @@ def train(cfg: DictConfig) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     module: LightningModule = hydra.utils.instantiate(cfg.module)
     trainer: Trainer = hydra.utils.instantiate(cfg.trainer)
 
-    object_dict = {
-        "cfg": cfg,
-        "train_dataset": train_dataset,
-        "val_dataset": val_dataset,
-        "test_dataset": test_dataset,
-        "model": module,
-        "trainer": trainer,
-    }
-
-    log_hyperparameters(object_dict)
-
+    
+    output_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    print(f"Hydra output dir: {output_dir}" )
+    trainer.logger.experiment.log_param(trainer.logger.run_id, "output_dir", output_dir)
+    
+    trainer.checkpoint_callback.dirpath = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir #Saves model in same dir as hydra output dir
     trainer.fit(model=module, datamodule=datamodule)
     trainer.test(model=module, datamodule=datamodule, ckpt_path="best")
-    module.save_metrics()
 
 
 @hydra.main(version_base="1.3", config_path="../config", config_name="rem_config.yaml")
 def main(cfg: DictConfig) -> None:
-
+    
     train(cfg)
 
 

@@ -3,6 +3,7 @@ datasets/out/
 outputs/
 .hydra/
 *.gif
+mlruns/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -12,7 +12,7 @@ from o2s.metrics.metrics import (
 )
 
 from o2s.typing import PartialOptimDict
-from o2s.lightning._base import _BaseLogging, _BaseModule
+from o2s.lightning._base import _BaseModule
 import logging
 
 log = logging.getLogger(__name__)
