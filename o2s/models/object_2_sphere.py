@@ -33,7 +33,7 @@ class Mesh2Sphere(nn.Module):
         max_radius: float,
         num_out_spheres: int = 1,
         use_mlp: bool = True,
-        mlp_hidden_dim=[61 * 21, 256, 512, 512, 61 * 21],
+        mlp_hidden_dim=[61 * 2 * 21, 1024, 61 * 2 * 21],
     ):
         super().__init__()
 
@@ -51,7 +51,7 @@ class Mesh2Sphere(nn.Module):
             ]
         )
         self.encoder = Equiformerv2(
-            num_layers=6,
+            num_layers=2,
             num_heads=4,
             ffn_hidden_channels=latent_feat_dim,
             lmax_list=[latent_lmax],
@@ -60,7 +60,7 @@ class Mesh2Sphere(nn.Module):
         # self.irreps_enc_out = e3nn_utils.s2_irreps(z_lmax)
 
         self.spherical_cnn = SphericalCNN(
-            [latent_lmax, output_lmax // 2, output_lmax, output_lmax],
+            [latent_lmax, output_lmax // 4, output_lmax // 2, output_lmax],
             [latent_feat_dim, 64, 32, num_out_spheres],
         )
         self.lin = o3.Linear(
@@ -71,7 +71,7 @@ class Mesh2Sphere(nn.Module):
             biases=True,
         )
         self.sh = SphericalHarmonics(
-            output_lmax, output_lmax + 1, num_lat=61, num_lon=21
+            output_lmax, output_lmax + 1, num_lat=61 * 2, num_lon=21
         )
 
         self.use_mlp = use_mlp
@@ -98,7 +98,7 @@ class Mesh2Sphere(nn.Module):
         # out = self.sh(w.view(1, 2, 3, 2))
         out = self.sh(w.squeeze())
         if self.use_mlp:
-            out = self.mlp(out.float().view(1, -1)).view(61, 21)
+            out = self.mlp(out.float().view(B, -1)).view(B, 61 * 2, 21)
 
         return out, w
 
