@@ -61,7 +61,7 @@ class MeshXarrayDataset(Dataset):
     ):
         super().__init__()
         if os.path.isfile(str(root)):
-            self.dataset = xr.open_dataset(root, engine="netcdf4")
+            self.dataset = xr.open_dataset(root, engine="h5netcdf")
         else:  # assume directory
             paths = [Path(root) / p for p in os.listdir(root) if ".nc" in p]
             self.dataset = xr.open_mfdataset(
@@ -276,7 +276,7 @@ class MeshXarrayDataset(Dataset):
         data["scale"] = sample_data.scale.values.item()
         data["frequency"] = sample_data.frequency.values.item()
         data["bandwidth"] = sample_data.bandwidth.values.item()
-        data["label"] = self.label_to_idx[sample_data.label.values.item()]
+        # data["label"] = self.label_to_idx[sample_data.label.values.item()]
 
         data["relative_range"] = torch.tensor(
             self.dataset.range.values, dtype=torch.get_default_dtype()

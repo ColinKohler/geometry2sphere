@@ -34,6 +34,10 @@ class Mesh2Sphere(nn.Module):
         num_out_spheres: int = 1,
         use_mlp: bool = True,
         mlp_hidden_dim=[61 * 2 * 21, 1024, 61 * 2 * 21],
+        num_layers_equivformer: int = 4,
+        num_heads_equivformer: int = 4,
+        num_lat: int = 21,
+        num_lon: int = 61
     ):
         super().__init__()
 
@@ -51,8 +55,8 @@ class Mesh2Sphere(nn.Module):
             ]
         )
         self.encoder = Equiformerv2(
-            num_layers=4,
-            num_heads=4,
+            num_layers=num_layers_equivformer,
+            num_heads=num_heads_equivformer,
             ffn_hidden_channels=latent_feat_dim,
             lmax_list=[latent_lmax],
             max_radius=max_radius,
@@ -72,7 +76,7 @@ class Mesh2Sphere(nn.Module):
             biases=True,
         )
         self.sh = SphericalHarmonics(
-            output_lmax, output_lmax + 1, num_lat=21, num_lon=61
+            output_lmax, output_lmax + 1, num_lat=num_lat, num_lon=num_lon
         )
 
         self.use_mlp = use_mlp

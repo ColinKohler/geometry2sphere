@@ -77,7 +77,11 @@ module:
     latent_feat_dim: 128
     max_radius: 10.0
     num_out_spheres: 1
-    use_mlp: False 
+    use_mlp: False
+    num_layers_equivformer: 4
+    num_heads_equivformer: 4
+    num_lat: 1
+    num_lon: 360 
 
   criterion:
     _target_: o2s.lightning.rem.SoftmaxWeightedMSELoss
