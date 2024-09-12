@@ -61,12 +61,18 @@ class Normalize(Transform):
     def _transform(
         self, data: Any, params: Dict[str, Any], **kwargs: Any
     ) -> Dict[str, Any]:
-        return (data - self.min) / (self.max - self.min)
+        r = self.max - self.min
+        norm_data = r * ((data - data.min()) / (data.max() - data.min())) + self.min
+        return norm_data
 
     def _untransform(
         self, data: Any, params: Dict[str, Any], **kwargs: Any
     ) -> Dict[str, Any]:
-        return (data * (self.max - self.min)) + self.min
+        unnorm_data = (data - self.min) * (
+            (data.max() - data.min()) / (self.max - self.min)
+        ) + data.min()
+
+        return unnorm_data
 
 
 class Center(Transform):

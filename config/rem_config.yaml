@@ -14,30 +14,36 @@ num_workers: 12
 
 train_dataset:
   _target_: o2s.datasets.radar_dataset.RadarDataset
-  root: ${ROOT_DATA_PATH}/train_dataset.nc #TODO: add dataset name
+  root: ${ROOT_DATA_PATH}/test_dataset.nc #TODO: add dataset name
   stage: train
   mesh_mode: simple
   orientation_mode: full 
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: o2s.datasets.transforms.radar.Abs
-      - _target_: o2s.datasets.transforms.radar.Log
-        #- _target_: o2s.datasets.transforms.radar.Center
-        #  mean: -7.352605819702148 #TODO: Verify the values
-        #  std: 2.067737340927124
+      - _target_: o2s.datasets.transforms.radar.Normalize
+        min: 0.0
+        max: 1.0
+      #- _target_: o2s.datasets.transforms.radar.Abs
+      #- _target_: o2s.datasets.transforms.radar.Log
+      #- _target_: o2s.datasets.transforms.radar.Center
+      #  mean: -7.352605819702148 #TODO: Verify the values
+      #  std: 2.067737340927124
 
 val_dataset:
   _target_: o2s.datasets.radar_dataset.RadarDataset
-  root: ${ROOT_DATA_PATH}/train_dataset.nc  #TODO: add dataset name
+  root: ${ROOT_DATA_PATH}/test_dataset.nc  #TODO: add dataset name
   stage: val
   mesh_mode: simple
   orientation_mode: full
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: o2s.datasets.transforms.radar.Abs
-      - _target_: o2s.datasets.transforms.radar.Log
+      - _target_: o2s.datasets.transforms.radar.Normalize
+        min: 0.0
+        max: 1.0
+      #- _target_: o2s.datasets.transforms.radar.Abs
+      #- _target_: o2s.datasets.transforms.radar.Log
       #- _target_: o2s.datasets.transforms.radar.Center
       #  mean: -7.352605819702148 #TODO: Verify the values
       #  std: 2.067737340927124
@@ -51,8 +57,11 @@ test_dataset:
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: o2s.datasets.transforms.radar.Abs
-      - _target_: o2s.datasets.transforms.radar.Log
+      - _target_: o2s.datasets.transforms.radar.Normalize
+        min: 0.0
+        max: 1.0
+      #- _target_: o2s.datasets.transforms.radar.Abs
+      #- _target_: o2s.datasets.transforms.radar.Log
       #- _target_: o2s.datasets.transforms.radar.Center
       #  mean: -7.352605819702148 #TODO: Verify the values
       #  std: 2.067737340927124
@@ -63,9 +72,9 @@ module:
 
   backbone: 
     _target_: o2s.models.object_2_sphere.Mesh2Sphere
-    latent_lmax: 6
+    latent_lmax: 5
     output_lmax: 50
-    latent_feat_dim: 64
+    latent_feat_dim: 128
     max_radius: 10.0
     num_out_spheres: 1
     use_mlp: False 

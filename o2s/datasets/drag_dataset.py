@@ -16,8 +16,8 @@ import xarray as xr
 from o2s.datasets.mesh_dataset import MeshXarrayDataset
 
 
-class RadarDataset(MeshXarrayDataset):
-    """Mesh-to-Radar XArray Dataset."""
+class DragDataset(MeshXarrayDataset):
+    """Mesh-to-Drag XArray Dataset."""
 
     RENAME_DICT = {
         "aspect_rad": "aspect",
@@ -92,16 +92,12 @@ class RadarDataset(MeshXarrayDataset):
             edge_index=non_zero_edges,
             edge_vec=non_zero_edge_vec,
         )
-        response = data.data.permute(2, 1, 0).double()
-        # response = torch.view_as_real(data.data)[:, :, :, 0].permute(2, 1, 0).double()
-        # response = torch.tensor(torch.view_as_real(data.data)[:, :, :, 0]).permute(
-        #    2, 0, 1
-        # )
+        drag = data.data.permute(2, 0, 1)
 
         if self.return_mesh:
             sample = (
                 mesh,
-                response,
+                drag,
                 torch.Tensor(data.rep_mesh_vertices),
                 torch.Tensor(data.rep_mesh_faces),
             )

@@ -51,7 +51,7 @@ class Mesh2Sphere(nn.Module):
             ]
         )
         self.encoder = Equiformerv2(
-            num_layers=2,
+            num_layers=4,
             num_heads=4,
             ffn_hidden_channels=latent_feat_dim,
             lmax_list=[latent_lmax],
@@ -61,6 +61,7 @@ class Mesh2Sphere(nn.Module):
 
         self.spherical_cnn = SphericalCNN(
             [latent_lmax, output_lmax // 4, output_lmax // 2, output_lmax],
+            # [latent_lmax, output_lmax, output_lmax, output_lmax],
             [latent_feat_dim, 64, 32, num_out_spheres],
         )
         self.lin = o3.Linear(
@@ -71,7 +72,7 @@ class Mesh2Sphere(nn.Module):
             biases=True,
         )
         self.sh = SphericalHarmonics(
-            output_lmax, output_lmax + 1, num_lat=61 * 2, num_lon=21
+            output_lmax, output_lmax + 1, num_lat=21, num_lon=61
         )
 
         self.use_mlp = use_mlp
@@ -84,18 +85,6 @@ class Mesh2Sphere(nn.Module):
         z = self.encoder(x)
         w = self.spherical_cnn(z.view(B, 1, -1))
         w = self.lin(w)
-        # w = torch.concat(
-        #    [
-        #        w[:, 0].view(1, 1),
-        #        w[:, 2:4],
-        #        w[:, 6:9],
-        #        w[:, 9].view(1, 1),
-        #        w[:, 11:13],
-        #        w[:, 15:],
-        #    ],
-        #    dim=1,
-        # )
-        # out = self.sh(w.view(1, 2, 3, 2))
         out = self.sh(w.squeeze())
         if self.use_mlp:
             out = self.mlp(out.float().view(B, -1)).view(B, 61 * 2, 21)

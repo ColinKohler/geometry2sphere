@@ -157,11 +157,12 @@ class SoftmaxWeightedMSELoss(nn.Module):
         self.reduction = reduction
 
     def forward(self, pred, target):
-        weight = nn.functional.softmax(target, dim=1)
+        B, A, R = target.shape
+        weight = nn.functional.softmax(target.view(B, -1), dim=1).view(B, A, R)
         loss = weight * (pred - target) ** 2
-        if self.reduction == "sum":
-            return loss.sum()
-        elif self.reduction == "mean":
-            return loss.mean()
-        else:  # Assume no reduction function required
-            return loss
+
+        weighted_mse_loss = (loss / (B * A * R)).sum()
+        mse_loss = nn.functional.mse_loss(pred, target)
+
+        loss = weighted_mse_loss + mse_loss
+        return loss
