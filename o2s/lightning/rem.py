@@ -162,6 +162,7 @@ class SoftmaxWeightedMSELoss(nn.Module):
         loss = weight * (pred - target) ** 2
 
         weighted_mse_loss = (loss / (B * A * R)).sum()
+        # weighted_mse_loss = (weight * (pred - target) ** 2).mean()
         mse_loss = nn.functional.mse_loss(pred, target)
 
         loss = weighted_mse_loss + mse_loss

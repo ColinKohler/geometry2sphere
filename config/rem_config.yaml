@@ -21,11 +21,11 @@ train_dataset:
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
+      - _target_: o2s.datasets.transforms.radar.Abs
+      - _target_: o2s.datasets.transforms.radar.Log
       - _target_: o2s.datasets.transforms.radar.Normalize
-        min: 0.0
+        min: -1.0
         max: 1.0
-      #- _target_: o2s.datasets.transforms.radar.Abs
-      #- _target_: o2s.datasets.transforms.radar.Log
       #- _target_: o2s.datasets.transforms.radar.Center
       #  mean: -7.352605819702148 #TODO: Verify the values
       #  std: 2.067737340927124
@@ -39,8 +39,10 @@ val_dataset:
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
+      - _target_: o2s.datasets.transforms.radar.Abs
+      - _target_: o2s.datasets.transforms.radar.Log
       - _target_: o2s.datasets.transforms.radar.Normalize
-        min: 0.0
+        min: -1.0
         max: 1.0
       #- _target_: o2s.datasets.transforms.radar.Abs
       #- _target_: o2s.datasets.transforms.radar.Log
@@ -57,8 +59,10 @@ test_dataset:
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
+      - _target_: o2s.datasets.transforms.radar.Abs
+      - _target_: o2s.datasets.transforms.radar.Log
       - _target_: o2s.datasets.transforms.radar.Normalize
-        min: 0.0
+        min: -1.0
         max: 1.0
       #- _target_: o2s.datasets.transforms.radar.Abs
       #- _target_: o2s.datasets.transforms.radar.Log
@@ -73,15 +77,15 @@ module:
   backbone: 
     _target_: o2s.models.object_2_sphere.Mesh2Sphere
     latent_lmax: 5
-    output_lmax: 50
+    output_lmax: 30
     latent_feat_dim: 128
     max_radius: 10.0
     num_out_spheres: 1
     use_mlp: False
     num_layers_equivformer: 4
     num_heads_equivformer: 4
-    num_lat: 1
-    num_lon: 360 
+    num_lat: 21
+    num_lon: 61
 
   criterion:
     _target_: o2s.lightning.rem.SoftmaxWeightedMSELoss

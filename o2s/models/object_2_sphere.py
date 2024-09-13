@@ -37,7 +37,7 @@ class Mesh2Sphere(nn.Module):
         num_layers_equivformer: int = 4,
         num_heads_equivformer: int = 4,
         num_lat: int = 21,
-        num_lon: int = 61
+        num_lon: int = 61,
     ):
         super().__init__()
 
@@ -64,9 +64,9 @@ class Mesh2Sphere(nn.Module):
         # self.irreps_enc_out = e3nn_utils.s2_irreps(z_lmax)
 
         self.spherical_cnn = SphericalCNN(
-            [latent_lmax, output_lmax // 4, output_lmax // 2, output_lmax],
+            [latent_lmax, output_lmax // 8, output_lmax // 4, output_lmax, output_lmax],
             # [latent_lmax, output_lmax, output_lmax, output_lmax],
-            [latent_feat_dim, 64, 32, num_out_spheres],
+            [latent_feat_dim, 32, 8, num_out_spheres, num_out_spheres],
         )
         self.lin = o3.Linear(
             e3nn_utils.s2_irreps(output_lmax),
@@ -76,7 +76,7 @@ class Mesh2Sphere(nn.Module):
             biases=True,
         )
         self.sh = SphericalHarmonics(
-            output_lmax, output_lmax + 1, num_lat=num_lat, num_lon=num_lon
+            L=output_lmax, grid_type="linear", num_theta=num_lat, num_phi=num_lon
         )
 
         self.use_mlp = use_mlp

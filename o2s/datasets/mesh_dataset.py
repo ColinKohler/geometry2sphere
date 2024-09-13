@@ -61,7 +61,7 @@ class MeshXarrayDataset(Dataset):
     ):
         super().__init__()
         if os.path.isfile(str(root)):
-            self.dataset = xr.open_dataset(root, engine="h5netcdf")
+            self.dataset = xr.open_dataset(root, engine="netcdf4")
         else:  # assume directory
             paths = [Path(root) / p for p in os.listdir(root) if ".nc" in p]
             self.dataset = xr.open_mfdataset(

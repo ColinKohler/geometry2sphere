@@ -148,14 +148,12 @@ class SphericalCNN(nn.Module):
                     f,
                     f_,
                     lmax_in=lmax[i],
-                    lmax_out=lmax[i + 1],
+                    lmax_out=lmax[i],
                     kernel_grid=grid_so3,
                 )
             )
 
-            layers.append(
-                SO3Activation(lmax[i + 1], lmax[i + 1], torch.relu, resolution=N)
-            )
+            layers.append(SO3Activation(lmax[i], lmax[i + 1], torch.relu, resolution=N))
         self.so3_conv = nn.Sequential(*layers)
 
         self.lin = SO3ToS2Convolution(
