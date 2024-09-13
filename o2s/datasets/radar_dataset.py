@@ -93,6 +93,7 @@ class RadarDataset(MeshXarrayDataset):
             edge_vec=non_zero_edge_vec,
         )
         response = data.data.permute(2, 0, 1).double()
+        response = torch.roll(response, response.size(1) // 2, 1)
         # response = torch.view_as_real(data.data)[:, :, :, 0].permute(2, 1, 0).double()
         # response = torch.tensor(torch.view_as_real(data.data)[:, :, :, 0]).permute(
         #    2, 0, 1

@@ -36,8 +36,8 @@ class Mesh2Sphere(nn.Module):
         mlp_hidden_dim=[61 * 2 * 21, 1024, 61 * 2 * 21],
         num_layers_equivformer: int = 4,
         num_heads_equivformer: int = 4,
-        num_lat: int = 21,
-        num_lon: int = 61,
+        num_theta: int = 21,
+        num_phi: int = 61,
     ):
         super().__init__()
 
@@ -76,7 +76,7 @@ class Mesh2Sphere(nn.Module):
             biases=True,
         )
         self.sh = SphericalHarmonics(
-            L=output_lmax, grid_type="linear", num_theta=num_lat, num_phi=num_lon
+            L=output_lmax, grid_type="linear", num_theta=num_theta, num_phi=num_phi
         )
 
         self.use_mlp = use_mlp
@@ -89,7 +89,7 @@ class Mesh2Sphere(nn.Module):
         z = self.encoder(x)
         w = self.spherical_cnn(z.view(B, 1, -1))
         w = self.lin(w)
-        out = self.sh(w.squeeze())
+        out = self.sh(w.squeeze()).permute(0, 2, 1)
         if self.use_mlp:
             out = self.mlp(out.float().view(B, -1)).view(B, 61 * 2, 21)
 
