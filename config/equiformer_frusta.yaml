@@ -1,0 +1,116 @@
+# @package _global_
+
+# defaults:
+#   - _self_
+#   - data: radar
+#   - module: rem
+#   - trainer: default
+
+experiment_name: frusta 
+ROOT_DATA_PATH: '/home/colin/hdd/workspace/object2sphere/datasets'
+RESULTS_PATH: '/home/colin/hdd/workspace/object2sphere/datasets/out'
+batch_size: 4
+num_workers: 12
+
+train_dataset:
+  _target_: o2s.datasets.radar_dataset.RadarDataset
+  root: ${ROOT_DATA_PATH}/frustra_train.nc 
+  stage: train
+  mesh_mode: simple
+  orientation_mode: full 
+  transform:
+    _target_: o2s.datasets.transforms.general.Compose
+    transforms:
+      - _target_: o2s.datasets.transforms.radar.Abs
+      - _target_: o2s.datasets.transforms.radar.Log
+      - _target_: o2s.datasets.transforms.radar.Normalize
+        min: -1.0
+        max: 1.0
+
+val_dataset:
+  _target_: o2s.datasets.radar_dataset.RadarDataset
+  root: ${ROOT_DATA_PATH}/frusta_test.nc 
+  stage: val
+  mesh_mode: simple
+  orientation_mode: full
+  transform:
+    _target_: o2s.datasets.transforms.general.Compose
+    transforms:
+      - _target_: o2s.datasets.transforms.radar.Abs
+      - _target_: o2s.datasets.transforms.radar.Log
+      - _target_: o2s.datasets.transforms.radar.Normalize
+        min: -1.0
+        max: 1.0
+
+test_dataset:
+  _target_: o2s.datasets.radar_dataset.RadarDataset
+  root: ${ROOT_DATA_PATH}/frusta_test.nc  
+  stage: test
+  mesh_mode: simple
+  orientation_mode: full 
+  transform:
+    _target_: o2s.datasets.transforms.general.Compose
+    transforms:
+      - _target_: o2s.datasets.transforms.radar.Abs
+      - _target_: o2s.datasets.transforms.radar.Log
+      - _target_: o2s.datasets.transforms.radar.Normalize
+        min: -1.0
+        max: 1.0
+
+module:
+  _target_: o2s.lightning.rem.REMLightningModule
+
+  backbone: 
+    _target_: o2s.models.equiformer.EquiformerDecoder
+    latent_lmax: 5
+    latent_feat_dim: 128
+    max_radius: 10.0
+    num_layers: 4
+    num_heads: 4
+    num_out_spheres: 1
+    num_theta: 61
+    num_phi: 1
+
+  criterion:
+    _target_: o2s.lightning.rem.SoftmaxWeightedMSELoss
+    reduction: sum
+
+  optim:
+    optimizer: 
+      _target_: torch.optim.AdamW
+      _partial_: True
+      lr: 1e-4
+      weight_decay: 1e-5
+    lr_scheduler:
+      _target_: torch.optim.lr_scheduler.StepLR
+      _partial_: True
+      gamma: 0.1
+      step_size: 15
+
+trainer:
+  _target_: pytorch_lightning.trainer.Trainer
+
+  devices: auto
+  accelerator: cuda
+  strategy: ddp
+  num_nodes: 1
+  max_epochs: 50
+  gradient_clip_val: 0.5
+  num_sanity_val_steps: 0
+  logger:
+    _target_: pytorch_lightning.loggers.MLFlowLogger
+    experiment_name: ${experiment_name}
+    run_name: ${experiment_name}/${now:%Y-%m-%d-%H-%M-%S}
+    tracking_uri: ${RESULTS_PATH}/mlflow/
+  callbacks:
+    - _target_: pytorch_lightning.callbacks.ModelCheckpoint
+      dirpath: "."
+      filename: "model_{epoch}"
+      monitor: "val/loss"
+      save_last: True
+    - _target_: pytorch_lightning.callbacks.LearningRateMonitor
+
+
+hydra:
+  run:
+    dir: ${RESULTS_PATH}/hydra/${experiment_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
