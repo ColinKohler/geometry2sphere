@@ -58,9 +58,10 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
 
     def calculate_equivariant_loss(self, batch, stage, advanced_metrics, ks):
         data, target = batch
-        b = target.size(0)
+        B, R, T, P = target.shape
 
-        target = target[:, 53]
+        # target = target[:, 52:55]
+        target = target[:, 53].view(B, 1, T, P)
         pred, _ = self.forward(data)
 
         loss = 0
@@ -80,7 +81,7 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
             sync_dist=True,
             on_epoch=True,
             on_step=False,
-            batch_size=b,
+            batch_size=B,
         )
         self.log(
             f"{stage}/mse_error",
@@ -88,7 +89,7 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
             sync_dist=True,
             on_epoch=True,
             on_step=False,
-            batch_size=b,
+            batch_size=B,
             prog_bar=True,
         )
 
@@ -112,7 +113,7 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
                 sync_dist=True,
                 on_epoch=True,
                 on_step=False,
-                batch_size=b,
+                batch_size=B,
             )
             for i, k in enumerate(ks):
                 self.log(
@@ -121,7 +122,7 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
                     sync_dist=True,
                     on_epoch=True,
                     on_step=False,
-                    batch_size=b,
+                    batch_size=B,
                 )
                 self.log(
                     f"{stage}/maxima_dist_score_k{k}",
@@ -129,7 +130,7 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
                     sync_dist=True,
                     on_epoch=True,
                     on_step=False,
-                    batch_size=b,
+                    batch_size=B,
                 )
                 self.log(
                     f"{stage}/peak_val_score_k{k}",
@@ -137,7 +138,7 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
                     sync_dist=True,
                     on_epoch=True,
                     on_step=False,
-                    batch_size=b,
+                    batch_size=B,
                 )
                 self.log(
                     f"{stage}/peak_dist_score_k{k}",
@@ -145,7 +146,7 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
                     sync_dist=True,
                     on_epoch=True,
                     on_step=False,
-                    batch_size=b,
+                    batch_size=B,
                 )
 
         return loss
@@ -157,11 +158,13 @@ class SoftmaxWeightedMSELoss(nn.Module):
         self.reduction = reduction
 
     def forward(self, pred, target):
-        B, A, R = target.shape
-        weight = nn.functional.softmax(target.view(B, -1), dim=1).view(B, A, R)
+        B, R, T, P = target.shape
+        weight = nn.functional.softmax(target.reshape(B * R, -1), dim=1).reshape(
+            B, R, T, P
+        )
         loss = weight * (pred - target) ** 2
 
-        weighted_mse_loss = (loss / (B * A * R)).sum()
+        weighted_mse_loss = (loss / (B * R * T * P)).sum()
         # weighted_mse_loss = (weight * (pred - target) ** 2).mean()
         mse_loss = nn.functional.mse_loss(pred, target)
 

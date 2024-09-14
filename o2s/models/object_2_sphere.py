@@ -64,9 +64,16 @@ class Mesh2Sphere(nn.Module):
         # self.irreps_enc_out = e3nn_utils.s2_irreps(z_lmax)
 
         self.spherical_cnn = SphericalCNN(
-            [latent_lmax, output_lmax // 8, output_lmax // 4, output_lmax, output_lmax],
+            [
+                latent_lmax,
+                latent_lmax,
+                output_lmax // 4,
+                output_lmax // 2,
+                output_lmax,
+                output_lmax,
+            ],
             # [latent_lmax, output_lmax, output_lmax, output_lmax],
-            [latent_feat_dim, 32, 8, num_out_spheres, num_out_spheres],
+            [latent_feat_dim, 16, 4, num_out_spheres, num_out_spheres, num_out_spheres],
         )
         self.lin = o3.Linear(
             e3nn_utils.s2_irreps(output_lmax),
@@ -89,7 +96,8 @@ class Mesh2Sphere(nn.Module):
         z = self.encoder(x)
         w = self.spherical_cnn(z.view(B, 1, -1))
         w = self.lin(w)
-        out = self.sh(w.squeeze()).permute(0, 2, 1)
+        out = self.sh(w.view(B * self.num_out_spheres, -1)).permute(0, 2, 1)
+        out = out.view(B, self.num_out_spheres, self.sh.num_theta, self.sh.num_phi)
         if self.use_mlp:
             out = self.mlp(out.float().view(B, -1)).view(B, 61 * 2, 21)
 

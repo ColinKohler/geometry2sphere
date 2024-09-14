@@ -38,6 +38,8 @@ class EquiformerDecoder(nn.Module):
         self.lmax = lmax
         self.latent_feat_dim = latent_feat_dim
         self.num_out_spheres = num_out_spheres
+        self.num_theta = num_theta
+        self.num_phi = num_phi
 
         self.irreps_latent = e3nn_utils.so3_irreps(lmax)
         self.irreps_enc_out = o3.Irreps(
@@ -45,19 +47,19 @@ class EquiformerDecoder(nn.Module):
         )
         self.encoder = Equiformerv2(
             num_layers=num_layers,
-            num_heads=num_head,
+            num_heads=num_heads,
             ffn_hidden_channels=latent_feat_dim,
             lmax_list=[lmax],
             max_radius=max_radius,
         )
         self.spherical_cnn = SphericalCNN(
             [lmax, lmax, lmax, lmax],
-            [latent_feat_dim, 64, 32, num_out_spheres],
+            [latent_feat_dim, 64, 32, 16],
         )
         self.lin = o3.Linear(
             e3nn_utils.s2_irreps(lmax),
-            o3.Irreps(str(num_theta * num_phi) + "e"),
-            f_in=latent_feat_dim,
+            o3.Irreps(str(num_theta * num_phi) + "x0e"),
+            f_in=16,
             f_out=num_out_spheres,
             biases=True,
         )
@@ -68,8 +70,9 @@ class EquiformerDecoder(nn.Module):
         z = self.encoder(x)
         out = self.spherical_cnn(z.view(B, 1, -1))
         out = self.lin(out)
+        out = out.view(B, self.num_out_spheres, self.num_theta, self.num_phi)
 
-        return out
+        return out, None
 
 
 if __name__ == "__main__":
