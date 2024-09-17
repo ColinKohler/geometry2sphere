@@ -60,8 +60,6 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
         data, target = batch
         B, R, T, P = target.shape
 
-        # target = target[:, 52:55]
-        target = target[:, 53].view(B, 1, T, P)
         pred, _ = self.forward(data)
 
         loss = 0

@@ -10,7 +10,7 @@ from e3nn import o3
 from torch_harmonics.spherical_harmonics_old import SphericalHarmonics
 
 from o2s.models import e3nn_utils
-from o2s.models.modules import MLP, SphericalCNN
+from o2s.models.modules import MLP, S2MLP, SphericalCNN
 from o2s.models.encoders.equiformerv2.equiformerv2 import Equiformerv2
 
 
@@ -43,6 +43,8 @@ class Mesh2Sphere(nn.Module):
 
         self.latent_lmax = latent_lmax
         self.output_lmax = output_lmax
+        self.num_theta = num_theta
+        self.num_phi = num_phi
         self.latent_feat_dim = latent_feat_dim
         self.num_out_spheres = num_out_spheres
 
@@ -61,30 +63,46 @@ class Mesh2Sphere(nn.Module):
             lmax_list=[latent_lmax],
             max_radius=max_radius,
         )
-        # self.irreps_enc_out = e3nn_utils.s2_irreps(z_lmax)
 
         self.spherical_cnn = SphericalCNN(
             [
                 latent_lmax,
                 latent_lmax,
+                latent_lmax,
+                latent_lmax,
+                output_lmax // 8,
                 output_lmax // 4,
                 output_lmax // 2,
                 output_lmax,
-                output_lmax,
             ],
-            # [latent_lmax, output_lmax, output_lmax, output_lmax],
-            [latent_feat_dim, 16, 4, num_out_spheres, num_out_spheres, num_out_spheres],
+            [
+                latent_feat_dim,
+                64,
+                32,
+                16,
+                num_out_spheres,
+                num_out_spheres,
+                num_out_spheres,
+                num_out_spheres,
+            ],
         )
-        self.lin = o3.Linear(
-            e3nn_utils.s2_irreps(output_lmax),
-            e3nn_utils.s2_irreps(output_lmax),
-            f_in=num_out_spheres,
-            f_out=num_out_spheres,
-            biases=True,
-        )
+
+        # self.spherical_cnn = SphericalCNN(
+        #    [latent_lmax, latent_lmax, latent_lmax, latent_lmax],
+        #    [latent_feat_dim, 64, 32, 16],
+        # )
+        # self.lin = S2MLP(16, 1, latent_lmax, output_lmax)
+        # self.lin = o3.Linear(
+        #   e3nn_utils.s2_irreps(latent_lmax),
+        #   e3nn_utils.s2_irreps(output_lmax),
+        #   f_in=16,
+        #   f_out=num_out_spheres,
+        #   biases=True,
+        # )
         self.sh = SphericalHarmonics(
             L=output_lmax, grid_type="linear", num_theta=num_theta, num_phi=num_phi
         )
+        # self.sh = o3.ToS2Grid(lmax=output_lmax, res=(num_theta, num_phi))
 
         self.use_mlp = use_mlp
         if self.use_mlp:
@@ -95,9 +113,9 @@ class Mesh2Sphere(nn.Module):
 
         z = self.encoder(x)
         w = self.spherical_cnn(z.view(B, 1, -1))
-        w = self.lin(w)
+        # w = self.lin(w)
         out = self.sh(w.view(B * self.num_out_spheres, -1)).permute(0, 2, 1)
-        out = out.view(B, self.num_out_spheres, self.sh.num_theta, self.sh.num_phi)
+        out = out.reshape(B, self.num_out_spheres, self.num_theta, self.num_phi)
         if self.use_mlp:
             out = self.mlp(out.float().view(B, -1)).view(B, 61 * 2, 21)
 

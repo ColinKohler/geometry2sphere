@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from numpy import random as npr
 import torch
+import torch.nn.functional as F
 from torch_geometric.data import Data
 import trimesh
 from torch.utils.data import Dataset
@@ -92,12 +93,13 @@ class RadarDataset(MeshXarrayDataset):
             edge_index=non_zero_edges,
             edge_vec=non_zero_edge_vec,
         )
-        response = data.data.permute(2, 0, 1).float()  # double()
+        response = data.data.permute(2, 0, 1).float()
         response = torch.roll(response, response.size(1) // 2, 1)
-        # response = torch.view_as_real(data.data)[:, :, :, 0].permute(2, 1, 0).double()
-        # response = torch.tensor(torch.view_as_real(data.data)[:, :, :, 0]).permute(
-        #    2, 0, 1
+        response = response[21:-20:2]
+        # response = F.interpolate(
+        #    response.view(107, 1, 61, 21), scale_factor=4, mode="bilinear"
         # )
+        # response = response.squeeze()
 
         if self.return_mesh:
             sample = (

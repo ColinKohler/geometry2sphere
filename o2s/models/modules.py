@@ -37,6 +37,34 @@ class MLP(nn.Module):
         return self.mlp(x)
 
 
+class S2MLP(nn.Module):
+    def __init__(self, f_in, f_out, lmax_in, lmax_out):
+        super().__init__()
+
+        self.lin_1 = o3.Linear(
+            e3nn_utils.s2_irreps(lmax_in),
+            e3nn_utils.s2_irreps(lmax_in),
+            f_in=f_in,
+            f_out=f_out,
+        )
+        self.act_1 = enn.S2Activation(
+            e3nn_utils.s2_irreps(lmax_in), torch.tanh, 160, lmax_out=lmax_out
+        )
+        self.lin_2 = o3.Linear(
+            e3nn_utils.s2_irreps(lmax_out),
+            e3nn_utils.s2_irreps(lmax_out),
+            f_in=f_out,
+            f_out=f_out,
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.lin_1(x)
+        x = self.act_1(x)
+        x = self.lin_2(x)
+
+        return x
+
+
 class S2Convolution(torch.nn.Module):
     """S2 Convolution"""
 

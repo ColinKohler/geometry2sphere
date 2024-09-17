@@ -62,11 +62,11 @@ module:
 
   backbone: 
     _target_: o2s.models.object_2_sphere.Mesh2Sphere
-    latent_lmax: 3
+    latent_lmax: 5
     output_lmax: 40
     latent_feat_dim: 128
     max_radius: 10.0
-    num_out_spheres: 1
+    num_out_spheres: 33
     use_mlp: False
     num_layers_equivformer: 4
     num_heads_equivformer: 4
