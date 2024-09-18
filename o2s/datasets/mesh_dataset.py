@@ -287,12 +287,12 @@ class MeshXarrayDataset(Dataset):
         data["roll_rad"] = torch.tensor(
             self.dataset.roll_rad.values, dtype=torch.get_default_dtype()
         )
-        # data["data"] = torch.view_as_complex(
-        #    torch.tensor(sample_data["rti"].values, dtype=torch.get_default_dtype())
-        # )
-        data["data"] = torch.tensor(
-            sample_data["rti"].values, dtype=torch.get_default_dtype()
-        )[:, :, :, 0]
+        data["data"] = torch.view_as_complex(
+            torch.tensor(sample_data["rti"].values, dtype=torch.get_default_dtype())
+        )
+        # data["data"] = torch.tensor(
+        #    sample_data["rti"].values, dtype=torch.get_default_dtype()
+        # )[:, :, :, 0]
 
         if "single" in self.orientation_mode:
             data["data"] = data["data"][:, self.roll_idx, :]

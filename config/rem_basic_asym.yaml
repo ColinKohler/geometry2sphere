@@ -21,11 +21,20 @@ train_dataset:
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: o2s.datasets.transforms.radar.Normalize
-        data_min: -1014.8423
-        data_max: 977.3337
-        target_min: -0.5
-        target_max: 0.5
+      - _target_: o2s.datasets.transforms.radar.Abs
+      - _target_: o2s.datasets.transforms.radar.Log
+      - _target_: o2s.datasets.transforms.radar.Center
+        mean: -3.5158
+        std: 1.1688
+        #mean: -8.102414
+        #std: 2.7063365
+        #- _target_: o2s.datasets.transforms.radar.Normalize
+        #  #data_min: -1014.8423
+        #  #data_max: 977.3337
+        #  data_min: -31.385
+        #  data_max: 6.923 
+        #  target_min: -0.5
+        #  target_max: 0.5
 
 val_dataset:
   _target_: o2s.datasets.radar_dataset.RadarDataset
@@ -36,11 +45,20 @@ val_dataset:
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: o2s.datasets.transforms.radar.Normalize
-        data_min: -943.4362
-        data_max: 979.1366
-        target_min: -0.5
-        target_max: 0.5
+      - _target_: o2s.datasets.transforms.radar.Abs
+      - _target_: o2s.datasets.transforms.radar.Log
+      - _target_: o2s.datasets.transforms.radar.Center
+        mean: -3.5158
+        std: 1.1688
+          #mean: -8.102414
+          #std: 2.7063365
+          #- _target_: o2s.datasets.transforms.radar.Normalize
+          #  #data_min: -943.4362
+          #  #data_max: 979.1366
+          #  data_min: -31.385
+          #  data_max: 6.923
+          #  target_min: -0.5
+          #  target_max: 0.5
 
 test_dataset:
   _target_: o2s.datasets.radar_dataset.RadarDataset
@@ -51,11 +69,18 @@ test_dataset:
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: o2s.datasets.transforms.radar.Normalize
-        data_min: -943.4362
-        data_max: 979.1366
-        target_min: -0.5
-        target_max: 0.5
+      - _target_: o2s.datasets.transforms.radar.Abs
+      - _target_: o2s.datasets.transforms.radar.Log
+      - _target_: o2s.datasets.transforms.radar.Center
+        mean: -3.5158
+        std: 1.1688
+          #mean: -8.102414
+          #std: 2.7063365
+          #- _target_: o2s.datasets.transforms.radar.Normalize
+          #  data_min: -31.385
+          #  data_max: 6.923
+          #  target_min: -0.5
+          #  target_max: 0.5
 
 module:
   _target_: o2s.lightning.rem.REMLightningModule
@@ -96,7 +121,7 @@ trainer:
   accelerator: cuda
   strategy: ddp
   num_nodes: 1
-  max_epochs: 20
+  max_epochs: 10
   gradient_clip_val: 0.5
   num_sanity_val_steps: 0
   logger:

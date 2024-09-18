@@ -151,7 +151,7 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
 
 
 class SoftmaxWeightedMSELoss(nn.Module):
-    def __init__(self, temp=0.1, reduction="sum"):
+    def __init__(self, temp=1.0, reduction="sum"):
         super().__init__()
         self.temp = temp
         self.reduction = reduction
