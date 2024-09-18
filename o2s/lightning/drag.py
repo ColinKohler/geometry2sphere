@@ -18,7 +18,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class REMLightningModule(_BaseModule, pl.LightningModule):
+class DragLightningModule(_BaseModule, pl.LightningModule):
     def __init__(
         self,
         *,
@@ -57,10 +57,10 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
         return loss
 
     def calculate_equivariant_loss(self, batch, stage, advanced_metrics, ks):
-        data, target = batch
-        B, R, T, P = target.shape
+        data, coords, target = batch
+        B = target.size(0)
 
-        pred, _ = self.forward(data)
+        pred, _ = self.forward((data, coords))
 
         loss = 0
         mse = 0
@@ -151,16 +151,15 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
 
 
 class SoftmaxWeightedMSELoss(nn.Module):
-    def __init__(self, temp=0.1, reduction="sum"):
+    def __init__(self, reduction="sum"):
         super().__init__()
-        self.temp = temp
         self.reduction = reduction
 
     def forward(self, pred, target):
         B, R, T, P = target.shape
-        weight = nn.functional.softmax(
-            target.reshape(B * R, -1) / self.temp, dim=1
-        ).reshape(B, R, T, P)
+        weight = nn.functional.softmax(target.reshape(B * R, -1), dim=1).reshape(
+            B, R, T, P
+        )
         loss = weight * (pred - target) ** 2
 
         weighted_mse_loss = (loss / (B * R * T * P)).sum()
@@ -169,3 +168,12 @@ class SoftmaxWeightedMSELoss(nn.Module):
 
         loss = weighted_mse_loss + mse_loss
         return loss
+
+
+class MSELoss(nn.Module):
+    def __init__(self, reduction="sum"):
+        super().__init__()
+        self.reduction = reduction
+
+    def forward(self, pred, target):
+        return nn.functional.mse_loss(pred.squeeze(), target.squeeze())

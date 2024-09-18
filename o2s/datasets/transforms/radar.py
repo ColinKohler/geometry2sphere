@@ -51,18 +51,25 @@ class Normalize(Transform):
 
     def __init__(
         self,
-        min: float,
-        max: float,
+        data_min: float,
+        data_max: float,
+        target_min: float,
+        target_max: float,
     ):
         super().__init__()
-        self.min = min
-        self.max = max
+        self.data_min = data_min
+        self.data_max = data_max
+        self.target_min = target_min
+        self.target_max = target_max
 
     def _transform(
         self, data: Any, params: Dict[str, Any], **kwargs: Any
     ) -> Dict[str, Any]:
-        r = self.max - self.min
-        norm_data = r * ((data - data.min()) / (data.max() - data.min())) + self.min
+        r = self.target_max - self.target_min
+        norm_data = (
+            r * ((data - self.data_min) / (self.data_max - self.data_min))
+            + self.target_min
+        )
         return norm_data
 
     def _untransform(
