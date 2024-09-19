@@ -121,7 +121,7 @@ trainer:
   accelerator: cuda
   strategy: ddp
   num_nodes: 1
-  max_epochs: 10
+  max_epochs: 50
   gradient_clip_val: 0.5
   num_sanity_val_steps: 0
   logger:
