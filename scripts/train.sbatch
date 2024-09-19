@@ -14,4 +14,4 @@
 conda activate torch
 
 echo "node: $SLURM_NODELIST"
-python scripts/train.py
+python scripts/train.py 

@@ -7,14 +7,16 @@
 #   - trainer: default
 
 experiment_name: basic_asym 
-ROOT_DATA_PATH: '/home/colin/hdd/workspace/object2sphere/datasets'
-RESULTS_PATH: '/home/colin/hdd/workspace/object2sphere/datasets/out'
+#ROOT_DATA_PATH: '/home/colin/hdd/workspace/object2sphere/datasets'
+#RESULTS_PATH: '/home/colin/hdd/workspace/object2sphere/datasets/out'
+ROOT_DATA_PATH: '/home/gridsan/ckohler/workspace/object2sphere/datasets'
+RESULTS_PATH: '/home/gridsan/ckohler/workspace/object2sphere/datasets/out'
 batch_size: 16
 num_workers: 12
 
 train_dataset:
   _target_: o2s.datasets.radar_dataset.RadarDataset
-  root: ${ROOT_DATA_PATH}/train_radar_0.nc 
+  root: ${ROOT_DATA_PATH}/train_radar.nc 
   stage: train
   mesh_mode: simple
   orientation_mode: full 
@@ -62,7 +64,7 @@ module:
 
   backbone: 
     _target_: o2s.models.equiformer.EquiformerDecoder
-    lmax: 5
+    lmax: 3
     latent_feat_dim: 128
     max_radius: 10.0
     num_layers: 4
@@ -94,7 +96,7 @@ trainer:
   accelerator: cuda
   strategy: ddp
   num_nodes: 1
-  max_epochs: 50
+  max_epochs: 20
   gradient_clip_val: 0.5
   num_sanity_val_steps: 0
   logger:
