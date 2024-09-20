@@ -48,7 +48,6 @@ class Mesh2Radar(nn.Module):
         self.latent_feat_dim = latent_feat_dim
         self.num_out_spheres = num_out_spheres
 
-        self.irreps_latent = e3nn_utils.so3_irreps(latent_lmax)
         self.irreps_enc_out = o3.Irreps(
             [
                 (latent_feat_dim, (l, p))
@@ -140,8 +139,6 @@ class Mesh2Drag(nn.Module):
         latent_feat_dim: int,
         max_radius: float,
         num_out_spheres: int = 1,
-        use_mlp: bool = True,
-        mlp_hidden_dim=[61 * 2 * 21, 1024, 61 * 2 * 21],
         num_layers_equivformer: int = 4,
         num_heads_equivformer: int = 4,
         num_theta: int = 1,
@@ -156,14 +153,10 @@ class Mesh2Drag(nn.Module):
         self.latent_feat_dim = latent_feat_dim
         self.num_out_spheres = num_out_spheres
 
-        self.irreps_latent = e3nn_utils.so3_irreps(latent_lmax)
         self.irreps_enc_out = o3.Irreps(
-            [
-                (latent_feat_dim, (l, p))
-                for l in range((latent_lmax) + 1)
-                for p in [-1, 1]
-            ]
+            [(latent_feat_dim, (l, 1)) for l in range((latent_lmax) + 1)]
         )
+        self.irreps_out = o3.Irreps([(1, (l, 1)) for l in range((latent_lmax) + 1)])
         self.encoder = Equiformerv2(
             num_layers=num_layers_equivformer,
             num_heads=num_heads_equivformer,
@@ -172,15 +165,16 @@ class Mesh2Drag(nn.Module):
             max_radius=max_radius,
         )
 
+        self.lin = o3.Linear(
+            (o3.Irreps("3x0e") + self.irreps_enc_out).simplify(), self.irreps_enc_out
+        )
+
         self.spherical_cnn = SphericalCNN(
             [
                 latent_lmax,
-                latent_lmax,
-                latent_lmax,
-                latent_lmax,
-                output_lmax // 8,
                 output_lmax // 4,
                 output_lmax // 2,
+                output_lmax,
                 output_lmax,
             ],
             [
@@ -189,48 +183,26 @@ class Mesh2Drag(nn.Module):
                 32,
                 16,
                 num_out_spheres,
-                num_out_spheres,
-                num_out_spheres,
-                num_out_spheres,
             ],
         )
 
-        # self.spherical_cnn = SphericalCNN(
-        #    [latent_lmax, latent_lmax, latent_lmax, latent_lmax],
-        #    [latent_feat_dim, 64, 32, 16],
-        # )
-        # self.lin = S2MLP(16, 1, latent_lmax, output_lmax)
-        # self.lin = o3.Linear(
-        #   e3nn_utils.s2_irreps(latent_lmax),
-        #   e3nn_utils.s2_irreps(output_lmax),
-        #   f_in=16,
-        #   f_out=num_out_spheres,
-        #   biases=True,
-        # )
         self.sh = SphericalHarmonics(
             L=output_lmax, grid_type="linear", num_theta=num_theta, num_phi=num_phi
         )
-        # self.sh = o3.ToS2Grid(lmax=output_lmax, res=(num_theta, num_phi))
-
-        self.use_mlp = use_mlp
-        if self.use_mlp:
-            self.mlp = MLP(mlp_hidden_dim)
 
     def forward(self, x):
-        x, c = x
+        x, flight_cond, coords = x
         B = x.batch_size
 
         z = self.encoder(x)
+        z = torch.concat([flight_cond, z.view(B, -1)], dim=-1)
+        z = self.lin(z)
         w = self.spherical_cnn(z.view(B, 1, -1))
-        # w = self.lin(w)
-        out = self.sh(w.view(B * self.num_out_spheres, -1), c).permute(0, 2, 1)
-        out = out.reshape(B, self.num_out_spheres, self.num_theta, self.num_phi)
-        if self.use_mlp:
-            out = self.mlp(out.float().view(B, -1)).view(B, 61 * 2, 21)
+        out = self.sh(w.view(B * self.num_out_spheres, -1), coords)
 
         return out, w
 
 
 if __name__ == "__main__":
-    m2s = Mesh2Sphere(2, 10, 32, 1.5)
+    m2s = Mesh2Radar(2, 10, 32, 1.5)
     print(type(m2s))

@@ -85,17 +85,15 @@ class DragDataset(Dataset):
 
         # Load mesh
         geom_fp = self.root + "geoms/" + self.str_data[idx, 1] + "_sm.stl"
-        mesh = trimesh.load_mesh(
-            geom_fp,
-            file_type="stl",
-            validate=False,
-            process=True,
-        )
-
-        # Decimate mesh
-        # num_faces = mesh.faces.shape[0]
-        # target_faces = num_faces // (1 / 0.001)
-        # sm_mesh = mesh.simplify_quadric_decimation(target_faces)
+        try:
+            mesh = trimesh.load_mesh(
+                geom_fp,
+                file_type="stl",
+                validate=False,
+                process=True,
+            )
+        except:
+            print(geom_fp)
 
         # Load verts/edges into torch_geometric
         vertices = torch.tensor(mesh.vertices, dtype=torch.get_default_dtype())
@@ -107,8 +105,10 @@ class DragDataset(Dataset):
         non_zero_edge_vec = edge_vec[non_zero_edge_idx]
 
         # Get node features
-        # node_feat = torch.from_numpy(self.float_data[idx][:3])
-        # node_feat = node_feat.view(1, -1).expand(len(vertices), -1)
+        flight_params = torch.from_numpy(self.float_data[idx][:3])
+        flight_params[0] = self.norm(flight_params[0], 1, -1, 0, 50)
+        flight_params[1] = self.norm(flight_params[1], 1, -1, 1000000, 500000000)
+        flight_params[2] = self.norm(flight_params[2], 1, -1, 0, 0.5)
 
         mesh = Data(
             pos=vertices,
@@ -132,5 +132,11 @@ class DragDataset(Dataset):
                 drag = d_transform(drag, rng=default_rng(self.seed))
         drag = drag["data"].reshape(1)
 
-        sample = (mesh, coords, drag)
+        sample = (mesh, flight_params, coords, drag)
         return sample
+
+    def norm(self, data, target_max, target_min, data_min, data_max):
+        r = target_max - target_min
+        norm_data = r * ((data - data_min) / (data_max - data_min)) + target_min
+
+        return norm_data

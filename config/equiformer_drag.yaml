@@ -6,7 +6,7 @@
 #   - module: rem
 #   - trainer: default
 
-experiment_name: drag 
+experiment_name: basic_asym 
 ROOT_DATA_PATH: '/home/colin/hdd/workspace/object2sphere/datasets'
 RESULTS_PATH: '/home/colin/hdd/workspace/object2sphere/datasets/out'
 batch_size: 16
@@ -16,6 +16,8 @@ train_dataset:
   _target_: o2s.datasets.drag_dataset.DragDataset
   root: ${ROOT_DATA_PATH}/drag_pods/
   stage: train
+  mesh_mode: simple
+  orientation_mode: full 
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
@@ -29,6 +31,8 @@ val_dataset:
   _target_: o2s.datasets.drag_dataset.DragDataset
   root: ${ROOT_DATA_PATH}/drag_pods/
   stage: val
+  mesh_mode: simple
+  orientation_mode: full
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
@@ -38,10 +42,13 @@ val_dataset:
         target_min: -1.0
         target_max: 1.0
 
+
 test_dataset:
   _target_: o2s.datasets.drag_dataset.DragDataset
   root: ${ROOT_DATA_PATH}/drag_pods/
   stage: test
+  mesh_mode: simple
+  orientation_mode: full 
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
@@ -55,20 +62,16 @@ module:
   _target_: o2s.lightning.drag.DragLightningModule
 
   backbone: 
-    _target_: o2s.models.object_2_sphere.Mesh2Drag
-    latent_lmax: 5
-    output_lmax: 20
+    _target_: o2s.models.equiformer.EquiformerDragDecoder
+    lmax: 5
     latent_feat_dim: 128
     max_radius: 1.0
-    num_out_spheres: 1 
-    num_layers_equivformer: 4
-    num_heads_equivformer: 4
-    num_theta: 1 
-    num_phi: 1 
+    num_layers: 4
+    num_heads: 4
 
   criterion:
     _target_: o2s.lightning.drag.MSELoss
-    reduction: mean
+    reduction: sum
 
   optim:
     optimizer: 

@@ -57,10 +57,10 @@ class DragLightningModule(_BaseModule, pl.LightningModule):
         return loss
 
     def calculate_equivariant_loss(self, batch, stage, advanced_metrics, ks):
-        data, coords, target = batch
+        data, flight_conds, coords, target = batch
         B = target.size(0)
 
-        pred, _ = self.forward((data, coords))
+        pred, _ = self.forward((data, flight_conds, coords))
 
         loss = 0
         mse = 0
@@ -90,62 +90,6 @@ class DragLightningModule(_BaseModule, pl.LightningModule):
             batch_size=B,
             prog_bar=True,
         )
-
-        if advanced_metrics:
-            base_score = 0
-            maxima_val_score, maxima_dist_score = [0 for k in ks], [0 for k in ks]
-            peak_val_score, peak_dist_score = [0 for k in ks], [0 for k in ks]
-            base_score += calculated_base_matching_score(target, pred)
-
-            for i, k in enumerate(ks):
-                mvs, mds = maxima_matching_score(target, pred, k=k)
-                pvs, pds = calculated_peak_matching_score(target, pred, max_num_peaks=k)
-                maxima_val_score[i] += mvs
-                maxima_dist_score[i] += mds
-                peak_val_score[i] += pvs
-                peak_dist_score[i] += pds
-
-            self.log(
-                f"{stage}/base_score",
-                base_score,
-                sync_dist=True,
-                on_epoch=True,
-                on_step=False,
-                batch_size=B,
-            )
-            for i, k in enumerate(ks):
-                self.log(
-                    f"{stage}/maxima_val_score_k{k}",
-                    maxima_val_score[i],
-                    sync_dist=True,
-                    on_epoch=True,
-                    on_step=False,
-                    batch_size=B,
-                )
-                self.log(
-                    f"{stage}/maxima_dist_score_k{k}",
-                    maxima_dist_score[i],
-                    sync_dist=True,
-                    on_epoch=True,
-                    on_step=False,
-                    batch_size=B,
-                )
-                self.log(
-                    f"{stage}/peak_val_score_k{k}",
-                    peak_val_score[i],
-                    sync_dist=True,
-                    on_epoch=True,
-                    on_step=False,
-                    batch_size=B,
-                )
-                self.log(
-                    f"{stage}/peak_dist_score_k{k}",
-                    peak_dist_score[i],
-                    sync_dist=True,
-                    on_epoch=True,
-                    on_step=False,
-                    batch_size=B,
-                )
 
         return loss
 
