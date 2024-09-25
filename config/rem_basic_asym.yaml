@@ -16,7 +16,7 @@ num_workers: 12
 
 train_dataset:
   _target_: o2s.datasets.radar_dataset.RadarDataset
-  root: ${ROOT_DATA_PATH}/train_radar.nc 
+  root: ${ROOT_DATA_PATH}/train_radar_0.nc 
   stage: train
   mesh_mode: simple
   orientation_mode: full 
@@ -90,7 +90,7 @@ module:
   backbone: 
     _target_: o2s.models.object_2_sphere.Mesh2Radar
     latent_lmax: 5
-    output_lmax: 70
+    output_lmax: 75
     latent_feat_dim: 128
     max_radius: 10.0
     num_out_spheres: 67

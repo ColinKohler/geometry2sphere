@@ -6,7 +6,7 @@
 #   - module: rem
 #   - trainer: default
 
-experiment_name: basic_asym 
+experiment_name: drag 
 ROOT_DATA_PATH: '/home/colin/hdd/workspace/object2sphere/datasets'
 RESULTS_PATH: '/home/colin/hdd/workspace/object2sphere/datasets/out'
 batch_size: 16
@@ -16,8 +16,6 @@ train_dataset:
   _target_: o2s.datasets.drag_dataset.DragDataset
   root: ${ROOT_DATA_PATH}/drag_pods/
   stage: train
-  mesh_mode: simple
-  orientation_mode: full 
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
@@ -31,8 +29,6 @@ val_dataset:
   _target_: o2s.datasets.drag_dataset.DragDataset
   root: ${ROOT_DATA_PATH}/drag_pods/
   stage: val
-  mesh_mode: simple
-  orientation_mode: full
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
@@ -47,8 +43,6 @@ test_dataset:
   _target_: o2s.datasets.drag_dataset.DragDataset
   root: ${ROOT_DATA_PATH}/drag_pods/
   stage: test
-  mesh_mode: simple
-  orientation_mode: full 
   transform:
     _target_: o2s.datasets.transforms.general.Compose
     transforms:
