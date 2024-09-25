@@ -19,6 +19,7 @@ class XarrayMeshData:
     data: torch.Tensor = MISSING
     label: torch.Tensor = MISSING
 
+
 @dataclass
 class TransformerXarrayMeshData(XarrayMeshData):
     face_adjacency: torch.Tensor = MISSING
