@@ -36,6 +36,7 @@ class DragDataset(Dataset):
         train_size: Optional[
             int
         ] = None,  # use to place additional constraints on the size of the training dataset. Useful for ablations
+        testing=False,
         **kwargs,
     ):
         super().__init__()
@@ -56,16 +57,21 @@ class DragDataset(Dataset):
         self.root = root
         self.train_size = train_size
 
-        train_idxs, eval_idxs = train_test_split(
-            np.arange(self.float_data.shape[0]),
-            train_size=train_size,
-            test_size=val_size,
-            shuffle=True,
-            random_state=seed,
-        )
-        val_idxs, test_idxs = train_test_split(
-            eval_idxs, test_size=0.5, random_state=seed
-        )
+        if testing:
+            train_idxs = np.arange(self.float_data.shape[0])
+            val_idxs = None
+            test_idxs = None
+        else:
+            train_idxs, eval_idxs = train_test_split(
+                np.arange(self.float_data.shape[0]),
+                train_size=train_size,
+                test_size=val_size,
+                shuffle=True,
+                random_state=seed,
+            )
+            val_idxs, test_idxs = train_test_split(
+                eval_idxs, test_size=0.5, random_state=seed
+            )
 
         self.stage_idxs = {"train": train_idxs, "val": val_idxs, "test": test_idxs}
 

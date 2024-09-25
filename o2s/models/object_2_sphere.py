@@ -172,8 +172,8 @@ class Mesh2Drag(nn.Module):
         self.spherical_cnn = SphericalCNN(
             [
                 latent_lmax,
-                output_lmax // 4,
-                output_lmax // 2,
+                output_lmax,
+                output_lmax,
                 output_lmax,
                 output_lmax,
             ],
