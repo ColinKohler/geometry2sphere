@@ -11,7 +11,7 @@ experiment_name: basic_asym
 #RESULTS_PATH: '/home/gridsan/ckohler/workspace/object2sphere/datasets/out'
 ROOT_DATA_PATH: '/home/colin/hdd/workspace/object2sphere/datasets'
 RESULTS_PATH: '/home/colin/hdd/workspace/object2sphere/datasets/out'
-batch_size: 64
+batch_size: 4
 num_workers: 12
 
 train_dataset:
@@ -90,11 +90,11 @@ module:
   backbone: 
     _target_: o2s.models.object_2_sphere.Mesh2Radar
     latent_lmax: 5
-    output_lmax: 25
+    output_lmax: 40
     latent_feat_dim: 128
     max_radius: 10.0
     num_out_spheres: 34 #67
-    use_mlp: True
+    use_mlp: False
     num_layers_equivformer: 4
     num_heads_equivformer: 4
     num_theta: 61
