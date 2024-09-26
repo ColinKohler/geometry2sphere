@@ -8,6 +8,7 @@ from e3nn import nn as enn
 from e3nn import o3
 
 from torch_harmonics.spherical_harmonics_old import SphericalHarmonics
+from torch_harmonics.spherical_harmonics_mlp import SphericalHarmonics as SHMLP
 
 from o2s.models import e3nn_utils
 from o2s.models.modules import MLP, S2MLP, SphericalCNN
@@ -33,7 +34,6 @@ class Mesh2Radar(nn.Module):
         max_radius: float,
         num_out_spheres: int = 1,
         use_mlp: bool = True,
-        mlp_hidden_dim=[61 * 2 * 21, 1024, 61 * 2 * 21],
         num_layers_equivformer: int = 4,
         num_heads_equivformer: int = 4,
         num_theta: int = 1,
@@ -69,9 +69,9 @@ class Mesh2Radar(nn.Module):
                 latent_lmax,
                 latent_lmax,
                 latent_lmax,
-                output_lmax // 8,
                 output_lmax // 4,
                 output_lmax // 2,
+                output_lmax,
                 output_lmax,
             ],
             [
@@ -101,11 +101,14 @@ class Mesh2Radar(nn.Module):
         self.sh = SphericalHarmonics(
             L=output_lmax, grid_type="linear", num_theta=num_theta, num_phi=num_phi
         )
+        # self.sh = SHMLP(
+        #    L=output_lmax, grid_type="linear", num_theta=num_theta, num_phi=num_phi
+        # )
         # self.sh = o3.ToS2Grid(lmax=output_lmax, res=(num_theta, num_phi))
 
         self.use_mlp = use_mlp
         if self.use_mlp:
-            self.mlp = MLP(mlp_hidden_dim)
+            self.mlp = MLP([num_out_spheres, num_out_spheres])
 
     def forward(self, x):
         B = x.batch_size
@@ -113,10 +116,11 @@ class Mesh2Radar(nn.Module):
         z = self.encoder(x)
         w = self.spherical_cnn(z.view(B, 1, -1))
         # w = self.lin(w)
-        out = self.sh(w.view(B * self.num_out_spheres, -1)).permute(0, 2, 1)
-        out = out.reshape(B, self.num_out_spheres, self.num_theta, self.num_phi)
+        out = self.sh(w).permute(0, 1, 3, 2)
+        # out = out.reshape(B, self.num_out_spheres, self.num_theta, self.num_phi)
         if self.use_mlp:
-            out = self.mlp(out.float().view(B, -1)).view(B, 61 * 2, 21)
+            out = self.mlp(out.permute(0, 2, 3, 1))
+            out = out.permute(0, 3, 1, 2)
 
         return out, w
 

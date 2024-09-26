@@ -57,7 +57,7 @@ module:
   backbone: 
     _target_: o2s.models.object_2_sphere.Mesh2Drag
     latent_lmax: 5
-    output_lmax: 5
+    output_lmax: 25
     latent_feat_dim: 128
     max_radius: 1.0
     num_out_spheres: 1 
