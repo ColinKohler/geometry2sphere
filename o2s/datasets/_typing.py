@@ -18,3 +18,13 @@ class XarrayMeshData:
     roll_rad: torch.Tensor = MISSING
     data: torch.Tensor = MISSING
     label: torch.Tensor = MISSING
+
+
+@dataclass
+class TransformerXarrayMeshData(XarrayMeshData):
+    face_adjacency: torch.Tensor = MISSING
+    face_normals: torch.Tensor = MISSING
+    centroid: torch.Tensor = MISSING
+    triangles_center: torch.Tensor = MISSING
+    triangles: torch.Tensor = MISSING
+    edges: torch.Tensor = MISSING

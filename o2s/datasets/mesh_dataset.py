@@ -26,12 +26,20 @@ log = logging.getLogger(__name__)
 class MeshXarrayDataset(Dataset):
 
     AVAILABLE_MESH_RETURN_MODES = ["full", "simple", "iterative", "ordered_iterative"]
+    # AVAILABLE_ORIENTATION_RETURN_MODES = [
+    #     "full",
+    #     "full_flattened",
+    #     "single",
+    #     "single_flattened",
+    # ]
+
     AVAILABLE_ORIENTATION_RETURN_MODES = [
-        "full",
-        "full_flattened",
-        "single",
-        "single_flattened",
-    ]
+        'full', 
+        'full_flattened', 
+        'single', 
+        'single_flattened', 
+        ]
+
 
     def __init__(
         self,
@@ -294,20 +302,21 @@ class MeshXarrayDataset(Dataset):
         #    sample_data["rti"].values, dtype=torch.get_default_dtype()
         # )[:, :, :, 0]
 
-        if "single" in self.orientation_mode:
-            data["data"] = data["data"][:, self.roll_idx, :]
-            data["roll_rad"] = data["roll_rad"][self.roll_idx]
-            if "flatten" in self.orientation_mode:
-                num_aspects = len(data["aspect_rad"])
-                data["roll_rad"] = torch.tensor(
-                    num_aspects * [data["roll_rad"].item()],
-                    dtype=torch.get_default_dtype(),
-                )
-        elif self.orientation_mode == "full_flattened":
-            num_rolls = len(data["roll_rad"])
-            num_aspects = len(data["aspect_rad"])
-            data["aspect_rad"] = torch.tile(data["aspect_rad"], (num_rolls,))
-            data["roll_rad"] = torch.repeat_interleave(data["roll_rad"], num_aspects)
+        if 'single' in self.orientation_mode:
+            data['data'] = data['data'][:,self.roll_idx, :]
+            data['roll_rad'] = data['roll_rad'][self.roll_idx]
+            if 'flatten' in self.orientation_mode:
+                num_aspects = len(data['aspect_rad'])
+                data['roll_rad'] = torch.tensor(num_aspects*[data['roll_rad'].item()], dtype=torch.get_default_dtype())
+        elif 'full' in self.orientation_mode:
+            num_rolls = len(data['roll_rad'])
+            num_aspects = len(data['aspect_rad'])
+            if 'flattened' in self.orientation_mode:
+                data['aspect_rad'] = torch.tile(data['aspect_rad'], (num_rolls,))
+                data['roll_rad'] = torch.repeat_interleave(data['roll_rad'], num_aspects)
+                # if 'roll_flattened' in self.orientation_mode:
+                data['data'] = torch.reshape(torch.permute(data['data'],[1,0,2]),[num_rolls*num_aspects, -1])
+
 
         if self.transforms is not None:
             for d_transform in self.transforms:
