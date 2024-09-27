@@ -5,12 +5,24 @@ from typing import List, Optional, Sequence, Union, Callable
 from collections.abc import Iterable
 import itertools
 import random
+from dataclasses import asdict
 
 import numpy as np
 import torch
+from torch.nn.utils.rnn import pad_sequence
 from numpy.random import default_rng
 from torch.utils.data import Dataset
 from torch_geometric.data import Data
+
+from tokenizers import (
+    decoders,
+    models,
+    normalizers,
+    pre_tokenizers,
+    processors,
+    trainers,
+    Tokenizer,
+)
 
 from sklearn.model_selection import train_test_split
 import trimesh
@@ -112,6 +124,7 @@ class DragDataset(Dataset):
         )
         triangles = torch.tensor(mesh.triangles, dtype=torch.get_default_dtype())
         edges = torch.tensor(mesh.edges_unique, dtype=torch.get_default_dtype())
+        verts = torch.tensor(mesh.vertices, dtype=torch.get_default_dtype())
 
         # Get node features
         flight_params = torch.from_numpy(self.float_data[idx][:3])
@@ -140,8 +153,11 @@ class DragDataset(Dataset):
             "centroid": centroid,
             "triangles_center": triangles_center,
             "triangles": triangles,
+            "vertices": verts,
             "edges": edges,
-            "flight_params": flight_params,
+            "global_params": flight_params,
+            "aspects": coords[0],
+            "rolls": coords[1],
             "data": drag,
         }
 
@@ -152,3 +168,91 @@ class DragDataset(Dataset):
         norm_data = r * ((data - data_min) / (data_max - data_min)) + target_min
 
         return norm_data
+
+
+class NumericTokenizer:
+    def __init__(
+        self,
+        min_val: int,
+        max_val: int,
+        num_categories: int,
+    ):
+
+        self.min_val = min_val
+        self.max_val = max_val
+        self.num_categories = num_categories
+        self.max_bin_num = num_categories - 1
+
+        self.bin_width = (max_val - min_val) / num_categories
+
+    def tokenize(self, values):
+        normalized_values = (values - self.min_val) / (self.max_val - self.min_val)
+        binned_values = np.clip(
+            np.floor(normalized_values * self.num_categories).int(),
+            a_min=0,
+            a_max=self.max_bin_num,
+        )
+
+        return binned_values
+
+
+def transformer_collate_function(
+    data: List[torch.Tensor],
+    input_id_pad_val: int = 0,
+    attention_mask_pad_val: int = 1,
+    **kwargs,
+):
+    data = {
+        k: [
+            (
+                d[k]
+                if type(d[k]) == str or torch.is_tensor((d[k]))
+                else torch.tensor(d[k])
+            )
+            for d in data
+        ]
+        for k in data[0].keys()
+    }
+    mesh_attention_mask = pad_sequence(
+        [torch.zeros(triangles.shape[0]) for triangles in data["triangles"]],
+        batch_first=True,
+        padding_value=attention_mask_pad_val,
+    ).to(bool)
+
+    aspects = torch.stack(data["aspects"], dim=0)
+    rolls = torch.stack(data["rolls"], dim=0)
+
+    orientation = torch.stack([aspects, rolls], dim=-1)
+
+    collated_data = {
+        "data": torch.stack(data["data"], dim=0).squeeze(1),
+        # "faces": pad_sequence(
+        #    data["mesh_faces"], batch_first=True, padding_value=input_id_pad_val
+        # ),
+        "face_adjacency": pad_sequence(
+            data["face_adjacency"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "face_normals": pad_sequence(
+            data["face_normals"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "centroid": pad_sequence(
+            data["centroid"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "triangles_center": pad_sequence(
+            data["triangles_center"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "triangles": pad_sequence(
+            data["triangles"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "vertices": pad_sequence(
+            data["vertices"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "edges": pad_sequence(
+            data["edges"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "global_params": torch.stack(data["global_params"], dim=0),
+        "attention_mask": mesh_attention_mask,
+        "orientation": orientation.squeeze(1),
+    }
+
+    return collated_data

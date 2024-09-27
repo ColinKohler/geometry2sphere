@@ -165,13 +165,14 @@ class DragTransformerDecoder(TransformerDecoderBase):
         self,
         cls_encoding: Tensor,
         global_params: Tensor,
+        coords: Tensor,
     ):
         """
         Currently predicts only the magnitude - fine for initial work
         """
         # cls_encoding = encoding[:,0,:]
         cls_encoding = self.encoding_residual(cls_encoding)
-        cls_encoding = torch.cat([cls_encoding, global_params], dim=-1)
+        cls_encoding = torch.cat([cls_encoding, global_params, coords], dim=-1)
 
         drag_prediction = self.output_layer(cls_encoding)
 
@@ -567,8 +568,10 @@ class MeshTransformerSimulator(nn.Module):
             else:
                 return range_profile
         elif self.decoder_type == "drag":
-            drag_preds = self.decoder(cls_encoding, data["global_params"])
-            return drag_preds
+            drag_preds = self.decoder(
+                cls_encoding, data["global_params"], data["orientation"]
+            )
+            return drag_preds, None
         else:
             raise NotImplementedError
 

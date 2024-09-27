@@ -9,6 +9,7 @@ from torch_geometric.data import Dataset
 from omegaconf import DictConfig
 from hydra.utils import instantiate
 from o2s.lightning.data import DataModule
+from o2s.datasets.transformer_drag_dataset import transformer_collate_function
 
 
 def train(cfg: DictConfig) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -24,6 +25,7 @@ def train(cfg: DictConfig) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         test_dataset=test_dataset,
         batch_size=cfg.batch_size,
         num_workers=cfg.num_workers,
+        collate_fn=transformer_collate_function,
         geometric_dataloader=False,
     )
     module: LightningModule = hydra.utils.instantiate(cfg.module)
