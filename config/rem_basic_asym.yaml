@@ -94,7 +94,7 @@ module:
     latent_feat_dim: 128
     max_radius: 10.0
     num_out_spheres: 34 #67
-    use_mlp: False
+    use_mlp: True
     num_layers_equivformer: 4
     num_heads_equivformer: 4
     num_theta: 61
@@ -114,7 +114,7 @@ module:
       _target_: torch.optim.lr_scheduler.StepLR
       _partial_: True
       gamma: 0.1
-      step_size: 15
+      step_size: 25
 
 trainer:
   _target_: pytorch_lightning.trainer.Trainer
@@ -123,7 +123,7 @@ trainer:
   accelerator: cuda
   strategy: ddp
   num_nodes: 1
-  max_epochs: 20
+  max_epochs: 30
   gradient_clip_val: 0.5
   num_sanity_val_steps: 0
   logger:

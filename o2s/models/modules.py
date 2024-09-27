@@ -133,14 +133,9 @@ class SO3ToS2Convolution(nn.Module):
 
     def __init__(self, f_in: int, f_out: int, lmax_in: int, lmax_out: int, kernel_grid):
         super().__init__()
-        s2_irreps = o3.Irreps(
-            [(1, (l, 1)) for l in range(lmax_out + 1)]
-            + [(1, (l, 1)) for l in range(lmax_out + 1)]
-        )
         self.lin = o3.Linear(
             e3nn_utils.so3_irreps(lmax_in),
             e3nn_utils.s2_irreps(lmax_out),
-            # s2_irreps,
             f_in=f_in,
             f_out=f_out,
         )

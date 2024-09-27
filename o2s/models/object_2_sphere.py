@@ -66,15 +66,9 @@ class Mesh2Radar(nn.Module):
         self.spherical_cnn = SphericalCNN(
             [
                 latent_lmax,
-                latent_lmax,
-                latent_lmax,
-                latent_lmax,
+                5,
                 10,
-                15,
                 20,
-                # output_lmax // 8,
-                # output_lmax // 4,
-                # output_lmax // 2,
                 output_lmax,
                 output_lmax,
             ],
@@ -85,31 +79,15 @@ class Mesh2Radar(nn.Module):
                 16,
                 num_out_spheres,
                 num_out_spheres,
-                num_out_spheres,
-                num_out_spheres,
-                num_out_spheres,
             ],
         )
 
-        # self.spherical_cnn = SphericalCNN(
-        #    [latent_lmax, latent_lmax, latent_lmax, latent_lmax],
-        #    [latent_feat_dim, 64, 32, 16],
-        # )
-        # self.lin = S2MLP(16, 1, latent_lmax, output_lmax)
-        # self.lin = o3.Linear(
-        #   e3nn_utils.s2_irreps(latent_lmax),
-        #   e3nn_utils.s2_irreps(output_lmax),
-        #   f_in=16,
-        #   f_out=num_out_spheres,
-        #   biases=True,
-        # )
         self.sh = SphericalHarmonics(
             L=output_lmax, grid_type="linear", num_theta=num_theta, num_phi=num_phi
         )
         # self.sh = SHMLP(
         #    L=output_lmax, grid_type="linear", num_theta=num_theta, num_phi=num_phi
         # )
-        # self.sh = o3.ToS2Grid(lmax=output_lmax, res=(num_theta, num_phi))
 
         self.use_mlp = use_mlp
         if self.use_mlp:
@@ -120,9 +98,7 @@ class Mesh2Radar(nn.Module):
 
         z = self.encoder(x)
         w = self.spherical_cnn(z.view(B, 1, -1))
-        # w = self.lin(w)
         out = self.sh(w).permute(0, 1, 3, 2)
-        # out = out.reshape(B, self.num_out_spheres, self.num_theta, self.num_phi)
         if self.use_mlp:
             out = self.mlp(out.permute(0, 2, 3, 1))
             out = out.permute(0, 3, 1, 2)
