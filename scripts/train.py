@@ -25,8 +25,8 @@ def train(cfg: DictConfig) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         test_dataset=test_dataset,
         batch_size=cfg.batch_size,
         num_workers=cfg.num_workers,
-        collate_fn=transformer_collate_function,
-        geometric_dataloader=False,
+        # collate_fn=transformer_collate_function,
+        geometric_dataloader=True,
     )
     module: LightningModule = hydra.utils.instantiate(cfg.module)
     trainer: Trainer = hydra.utils.instantiate(cfg.trainer)

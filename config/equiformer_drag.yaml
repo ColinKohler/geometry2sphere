@@ -71,7 +71,7 @@ module:
     optimizer: 
       _target_: torch.optim.AdamW
       _partial_: True
-      lr: 1e-4
+      lr: 1e-5
       weight_decay: 1e-5
     lr_scheduler:
       _target_: torch.optim.lr_scheduler.StepLR

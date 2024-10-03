@@ -57,7 +57,7 @@ module:
   backbone: 
     _target_: o2s.models.object_2_sphere.Mesh2Drag
     latent_lmax: 5
-    output_lmax: 25
+    output_lmax: 5
     latent_feat_dim: 128
     max_radius: 1.0
     num_out_spheres: 1 
@@ -74,7 +74,7 @@ module:
     optimizer: 
       _target_: torch.optim.AdamW
       _partial_: True
-      lr: 1e-4
+      lr: 1e-5
       weight_decay: 1e-5
     lr_scheduler:
       _target_: torch.optim.lr_scheduler.StepLR

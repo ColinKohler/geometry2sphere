@@ -183,7 +183,7 @@ class Mesh2Drag(nn.Module):
         z = torch.concat([flight_cond, z.view(B, -1)], dim=-1)
         z = self.lin(z)
         w = self.spherical_cnn(z.view(B, 1, -1))
-        out = self.sh(w.view(B * self.num_out_spheres, -1), coords)
+        out = self.sh(w.view(B, self.num_out_spheres, -1), coords)
 
         return out, w
 

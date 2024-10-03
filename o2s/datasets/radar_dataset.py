@@ -99,7 +99,7 @@ class RadarDataset(MeshXarrayDataset):
         )
         response = data.data.permute(2, 0, 1).float()
         response = torch.roll(response, response.size(1) // 2, 1)
-        response = response[20:-20:2]
+        response = response[20:-20:1]
         # response = F.interpolate(
         #    response.view(107, 1, 61, 21), scale_factor=4, mode="bilinear"
         # )
@@ -118,29 +118,32 @@ class RadarDataset(MeshXarrayDataset):
         return sample
 
 
-
 class TransformerMeshXarrayDataset(MeshXarrayDataset):
-  
-#   RENAME_DICT = {
-#     # 'aspect_rad':'aspects',
-#     # 'roll_rad':'rolls',
-#     'rep_mesh_vertices':'mesh_vertices', 
-#     'rep_mesh_faces':'mesh_faces', 
 
-#   }
+    #   RENAME_DICT = {
+    #     # 'aspect_rad':'aspects',
+    #     # 'roll_rad':'rolls',
+    #     'rep_mesh_vertices':'mesh_vertices',
+    #     'rep_mesh_faces':'mesh_faces',
 
-  REMOVE_NAMES = [
-       'sim_mesh_vertices', 
-       'sim_mesh_faces', 
+    #   }
 
-  ]
-  
-  def __init__(self,
-                root: str,
-                stage:str, 
-                val_size: Optional[Union[int, float]] = 0.1, #use to place additional constraints on the size of the training dataset. Useful for ablations
-                train_size: Optional[int]=None, #use to place additional constraints on the size of the training dataset. Useful for ablations
-                **kwargs,
+    REMOVE_NAMES = [
+        "sim_mesh_vertices",
+        "sim_mesh_faces",
+    ]
+
+    def __init__(
+        self,
+        root: str,
+        stage: str,
+        val_size: Optional[
+            Union[int, float]
+        ] = 0.1,  # use to place additional constraints on the size of the training dataset. Useful for ablations
+        train_size: Optional[
+            int
+        ] = None,  # use to place additional constraints on the size of the training dataset. Useful for ablations
+        **kwargs,
     ):
         super().__init__(
             root=root,
@@ -149,22 +152,30 @@ class TransformerMeshXarrayDataset(MeshXarrayDataset):
             train_size=train_size,
             **kwargs,
         )
-    
-  def __getitem__(self, idx, return_mesh:bool=False):
+
+    def __getitem__(self, idx, return_mesh: bool = False):
         data = super().__getitem__(idx)
-        
+
         vertices = data.rep_mesh_vertices
-        faces    = data.rep_mesh_faces
+        faces = data.rep_mesh_faces
 
-        assert len(vertices.shape) == 2 and len(faces.shape) == 2, 'Vertices and faces arrays are expected to have dimension of 2, but do not have that. Check your underlying data'
+        assert (
+            len(vertices.shape) == 2 and len(faces.shape) == 2
+        ), "Vertices and faces arrays are expected to have dimension of 2, but do not have that. Check your underlying data"
 
-        mesh = trimesh.Trimesh(vertices=vertices, faces=faces, validate=False, process=False)
+        mesh = trimesh.Trimesh(
+            vertices=vertices, faces=faces, validate=False, process=False
+        )
 
         # Read the additional information from the mesh
-        face_adjacency = torch.tensor(mesh.face_adjacency, dtype=torch.get_default_dtype())
+        face_adjacency = torch.tensor(
+            mesh.face_adjacency, dtype=torch.get_default_dtype()
+        )
         face_normals = torch.tensor(mesh.face_normals, dtype=torch.get_default_dtype())
         centroid = torch.tensor(mesh.centroid, dtype=torch.get_default_dtype())
-        triangles_center = torch.tensor(mesh.triangles_center, dtype=torch.get_default_dtype())
+        triangles_center = torch.tensor(
+            mesh.triangles_center, dtype=torch.get_default_dtype()
+        )
         triangles = torch.tensor(mesh.triangles, dtype=torch.get_default_dtype())
         edges = torch.tensor(mesh.edges_unique, dtype=torch.get_default_dtype())
 
@@ -185,53 +196,80 @@ class TransformerMeshXarrayDataset(MeshXarrayDataset):
             triangles_center=triangles_center,
             triangles=triangles,
             edges=edges,
-            **data
-            )
+            **data,
+        )
 
         if return_mesh:
             return output, mesh
         else:
             return output
 
+
 def radar_transformer_collate_function(
     data: List[torch.Tensor],
     input_id_pad_val: int = 0,
-    attention_mask_pad_val:int=1,
-    scaling_tokenizer:Optional[Callable]=None,
-    **kwargs
-    ):
+    attention_mask_pad_val: int = 1,
+    scaling_tokenizer: Optional[Callable] = None,
+    **kwargs,
+):
 
-    data = {k: [asdict(d)[k] if type(asdict(d)[k]) == str or torch.is_tensor((asdict(d)[k])) else torch.tensor(asdict(d)[k])  for d in data] for k in asdict(data[0]).keys() if 'sim' not in k}
+    data = {
+        k: [
+            (
+                asdict(d)[k]
+                if type(asdict(d)[k]) == str or torch.is_tensor((asdict(d)[k]))
+                else torch.tensor(asdict(d)[k])
+            )
+            for d in data
+        ]
+        for k in asdict(data[0]).keys()
+        if "sim" not in k
+    }
     mesh_attention_mask = pad_sequence(
-        [torch.zeros(triangles.shape[0]) for triangles in data['triangles']],
+        [torch.zeros(triangles.shape[0]) for triangles in data["triangles"]],
         batch_first=True,
-        padding_value=attention_mask_pad_val
+        padding_value=attention_mask_pad_val,
     ).to(bool)
 
-    aspects = torch.stack(data['aspect_rad'], dim=0)
-    rolls = torch.stack(data['roll_rad'], dim=0)
+    aspects = torch.stack(data["aspect_rad"], dim=0)
+    rolls = torch.stack(data["roll_rad"], dim=0)
 
     orientation = torch.stack([aspects, rolls], dim=-1)
-    scale = torch.stack(data['scale'], dim=-1)
+    scale = torch.stack(data["scale"], dim=-1)
     if scaling_tokenizer is not None:
         scale = scaling_tokenizer.tokenize(scale)
 
-
     collated_data = {
-        'data'            :torch.stack(data['data'], dim=0).squeeze(1),
+        "data": torch.stack(data["data"], dim=0).squeeze(1),
         # 'label'           :torch.stack(data['label'], dim=0),
-        'faces'           :pad_sequence(data['rep_mesh_faces'], batch_first=True, padding_value=input_id_pad_val),
-        'vertices'        :pad_sequence(data['rep_mesh_vertices'], batch_first=True, padding_value=input_id_pad_val),
-        'face_adjacency'  :pad_sequence(data['face_adjacency'], batch_first=True, padding_value=input_id_pad_val),
-        'face_normals'    :pad_sequence(data['face_normals'], batch_first=True, padding_value=input_id_pad_val),
-        'centroid'        :pad_sequence(data['centroid'], batch_first=True, padding_value=input_id_pad_val),
-        'triangles_center':pad_sequence(data['triangles_center'], batch_first=True, padding_value=input_id_pad_val),
-        'triangles'       :pad_sequence(data['triangles'], batch_first=True, padding_value=input_id_pad_val),
-        'edges'           :pad_sequence(data['edges'], batch_first=True, padding_value=input_id_pad_val),
-        'attention_mask'  :mesh_attention_mask,
-        'orientation'     :orientation.squeeze(1),
-        'scale'           :scale.squeeze(),
-        'seed':torch.stack(data['seed'], dim=0)
+        "faces": pad_sequence(
+            data["rep_mesh_faces"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "vertices": pad_sequence(
+            data["rep_mesh_vertices"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "face_adjacency": pad_sequence(
+            data["face_adjacency"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "face_normals": pad_sequence(
+            data["face_normals"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "centroid": pad_sequence(
+            data["centroid"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "triangles_center": pad_sequence(
+            data["triangles_center"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "triangles": pad_sequence(
+            data["triangles"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "edges": pad_sequence(
+            data["edges"], batch_first=True, padding_value=input_id_pad_val
+        ),
+        "attention_mask": mesh_attention_mask,
+        "orientation": orientation.squeeze(1),
+        "scale": scale.squeeze(),
+        "seed": torch.stack(data["seed"], dim=0),
     }
 
     return collated_data

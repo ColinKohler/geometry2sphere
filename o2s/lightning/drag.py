@@ -57,12 +57,12 @@ class DragLightningModule(_BaseModule, pl.LightningModule):
         return loss
 
     def calculate_equivariant_loss(self, batch, stage, advanced_metrics, ks):
-        # data, flight_conds, coords, target = batch
-        target = batch["data"]
+        data, flight_conds, coords, target = batch
+        # target = batch["data"]
         B = target.size(0)
 
-        # pred, _ = self.forward((data, flight_conds, coords))
-        pred, _ = self.forward(batch)
+        pred, _ = self.forward((data, flight_conds, coords))
+        # pred, _ = self.forward(batch)
 
         loss = 0
         mse = 0

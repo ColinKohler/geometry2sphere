@@ -93,7 +93,7 @@ module:
     output_lmax: 40
     latent_feat_dim: 128
     max_radius: 10.0
-    num_out_spheres: 34 #67
+    num_out_spheres: 67
     use_mlp: True
     num_layers_equivformer: 4
     num_heads_equivformer: 4
