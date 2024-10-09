@@ -9,7 +9,6 @@
 #SBATCH --gres=gpu:volta:1
 
 #SBATCH --mail-type=FAIL
-#SBATCH --mail-user=kohler.c@northeastern.edu
 
 conda activate torch
 

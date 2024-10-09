@@ -8,8 +8,8 @@ from pytorch_lightning import LightningDataModule, LightningModule, Trainer
 from torch_geometric.data import Dataset
 from omegaconf import DictConfig
 from hydra.utils import instantiate
-from o2s.lightning.data import DataModule
-from o2s.datasets.transformer_drag_dataset import transformer_collate_function
+from g2s.lightning.data import DataModule
+from g2s.datasets.transformer_drag_dataset import transformer_collate_function
 
 
 def train(cfg: DictConfig) -> Tuple[Dict[str, Any], Dict[str, Any]]:
