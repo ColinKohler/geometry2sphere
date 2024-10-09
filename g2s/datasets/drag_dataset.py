@@ -15,7 +15,7 @@ from torch_geometric.data import Data
 from sklearn.model_selection import train_test_split
 import trimesh
 
-from o2s.datasets.transforms._base import Transform
+from g2s.datasets.transforms._base import Transform
 
 
 log = logging.getLogger(__name__)

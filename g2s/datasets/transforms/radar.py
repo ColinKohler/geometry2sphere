@@ -1,7 +1,7 @@
 from typing import Any, Dict
 import torch
 
-from o2s.datasets.transforms._base import Transform
+from g2s.datasets.transforms._base import Transform
 
 
 class Log(Transform):
@@ -41,7 +41,9 @@ class Abs(Transform):
     def _untransform(
         self, data: Any, params: Dict[str, Any], **kwargs: Any
     ) -> Dict[str, Any]:
-        print('Not possible to reverse an absolute magnitude transform, so just acting as a pass through')
+        print(
+            "Not possible to reverse an absolute magnitude transform, so just acting as a pass through"
+        )
         return data
 
 
@@ -108,19 +110,24 @@ class Center(Transform):
 
 class CenterRangeCrop(Transform):
 
-    AFFECTED_PARAMS = ['data']
+    AFFECTED_PARAMS = ["data"]
 
     def __init__(
         self,
-        crop_amount:int=20,
+        crop_amount: int = 20,
     ):
         super().__init__()
         self.crop_amount = crop_amount
 
+    def _transform(
+        self, data: Any, params: Dict[str, Any], **kwargs: Any
+    ) -> Dict[str, Any]:
+        return data[..., self.crop_amount : -1 * self.crop_amount]
 
-    def _transform(self, data: Any, params: Dict[str, Any], **kwargs:Any) -> Dict[str, Any]:
-        return data[...,self.crop_amount:-1*self.crop_amount]
-
-    def _untransform(self, data: Any, params: Dict[str, Any], **kwargs:Any) -> Dict[str, Any]:
-        print('Not possible to reverse a crop transform, so just acting as a pass through')
+    def _untransform(
+        self, data: Any, params: Dict[str, Any], **kwargs: Any
+    ) -> Dict[str, Any]:
+        print(
+            "Not possible to reverse a crop transform, so just acting as a pass through"
+        )
         return data

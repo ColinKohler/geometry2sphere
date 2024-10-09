@@ -27,8 +27,8 @@ from tokenizers import (
 from sklearn.model_selection import train_test_split
 import trimesh
 
-from o2s.datasets.transforms._base import Transform
-from o2s.datasets._typing import TransformerXarrayMeshData
+from g2s.datasets.transforms._base import Transform
+from g2s.datasets._typing import TransformerXarrayMeshData
 
 
 log = logging.getLogger(__name__)

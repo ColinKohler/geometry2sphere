@@ -3,81 +3,91 @@
 # defaults:
 #   - _self_
 #   - data: radar
-#   - module: g2s 
+#   - module:  g2s
 #   - trainer: default
 
-experiment_name: drag 
+experiment_name: basic_asym 
 ROOT_DATA_PATH: 'geometry2sphere/datasets'
 RESULTS_PATH: 'geometry2sphere/datasets/out'
-batch_size: 16
+batch_size: 4
 num_workers: 12
 
 train_dataset:
-  _target_: g2s.datasets.drag_dataset.DragDataset
-  root: ${ROOT_DATA_PATH}/drag_pods/
+  _target_: g2s.datasets.radar_dataset.RadarDataset
+  root: ${ROOT_DATA_PATH}/train_radar.nc 
   stage: train
+  mesh_mode: simple
+  orientation_mode: full 
   transform:
     _target_: g2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: g2s.datasets.transforms.radar.Normalize
-        data_min: -0.06614039
-        data_max: 0.1890188
-        target_min: -1.0
-        target_max: 1.0
+      - _target_: g2s.datasets.transforms.radar.Abs
+      - _target_: g2s.datasets.transforms.radar.Log
+      - _target_: g2s.datasets.transforms.radar.Center
+        mean: -3.5158
+        std: 1.1688
 
 val_dataset:
-  _target_: g2s.datasets.drag_dataset.DragDataset
-  root: ${ROOT_DATA_PATH}/drag_pods/
+  _target_: g2s.datasets.radar_dataset.RadarDataset
+  root: ${ROOT_DATA_PATH}/test_radar.nc 
   stage: val
+  mesh_mode: simple
+  orientation_mode: full
   transform:
     _target_: g2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: g2s.datasets.transforms.radar.Normalize
-        data_min: -0.06614039
-        data_max: 0.1890188
-        target_min: -1.0
-        target_max: 1.0
-
+      - _target_: g2s.datasets.transforms.radar.Abs
+      - _target_: g2s.datasets.transforms.radar.Log
+      - _target_: g2s.datasets.transforms.radar.Center
+        mean: -3.5158
+        std: 1.1688
 
 test_dataset:
-  _target_: g2s.datasets.drag_dataset.DragDataset
-  root: ${ROOT_DATA_PATH}/drag_pods/
+  _target_: g2s.datasets.radar_dataset.RadarDataset
+  root: ${ROOT_DATA_PATH}/test_radar.nc  
   stage: test
+  mesh_mode: simple
+  orientation_mode: full 
   transform:
     _target_: g2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: g2s.datasets.transforms.radar.Normalize
-        data_min: -0.06614039
-        data_max: 0.1890188
-        target_min: -1.0
-        target_max: 1.0
+      - _target_: g2s.datasets.transforms.radar.Abs
+      - _target_: g2s.datasets.transforms.radar.Log
+      - _target_: g2s.datasets.transforms.radar.Center
+        mean: -3.5158
+        std: 1.1688
 
 module:
-  _target_: g2s.lightning.drag.DragLightningModule
+  _target_: g2s.lightning.g2s.G2SLightningModule
 
   backbone: 
-    _target_: g2s.models.equiformer.EquiformerDragDecoder
-    lmax: 5
+    _target_: g2s.models.geometry_2_sphere.Mesh2Radar
+    latent_lmax: 5
+    output_lmax: 40
     latent_feat_dim: 128
-    max_radius: 1.0
-    num_layers: 4
-    num_heads: 4
+    max_radius: 10.0
+    num_out_spheres: 67
+    use_mlp: True
+    num_layers_equivformer: 4
+    num_heads_equivformer: 4
+    num_theta: 61
+    num_phi: 21
 
   criterion:
-    _target_: g2s.lightning.drag.MSELoss
+    _target_: g2s.lightning.g2s.SoftmaxWeightedMSELoss
     reduction: sum
 
   optim:
     optimizer: 
       _target_: torch.optim.AdamW
       _partial_: True
-      lr: 1e-5
+      lr: 1e-4
       weight_decay: 1e-5
     lr_scheduler:
       _target_: torch.optim.lr_scheduler.StepLR
       _partial_: True
       gamma: 0.1
-      step_size: 15
+      step_size: 25
 
 trainer:
   _target_: pytorch_lightning.trainer.Trainer
@@ -86,7 +96,7 @@ trainer:
   accelerator: cuda
   strategy: ddp
   num_nodes: 1
-  max_epochs: 10
+  max_epochs: 30
   gradient_clip_val: 0.5
   num_sanity_val_steps: 0
   logger:

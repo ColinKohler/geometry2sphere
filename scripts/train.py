@@ -43,7 +43,7 @@ def train(cfg: DictConfig) -> Tuple[Dict[str, Any], Dict[str, Any]]:
 
 
 @hydra.main(
-    version_base="1.3", config_path="../config", config_name="rem_basic_asym.yaml"
+    version_base="1.3", config_path="../config", config_name="g2s_basic_asym.yaml"
 )
 def main(cfg: DictConfig) -> None:
 

@@ -10,9 +10,9 @@ from e3nn import o3
 from torch_harmonics.spherical_harmonics_old import SphericalHarmonics
 from torch_harmonics.spherical_harmonics_mlp import SphericalHarmonics as SHMLP
 
-from o2s.models import e3nn_utils
-from o2s.models.modules import MLP, S2MLP, SphericalCNN
-from o2s.models.encoders.equiformerv2.equiformerv2 import Equiformerv2
+from g2s.models import e3nn_utils
+from g2s.models.modules import MLP, S2MLP, SphericalCNN
+from g2s.models.encoders.equiformerv2.equiformerv2 import Equiformerv2
 
 
 class Mesh2Radar(nn.Module):

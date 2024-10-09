@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 from numpy.random import Generator
 import torch
 from torch import nn
-from o2s.datasets.transforms._base import Transform
+from g2s.datasets.transforms._base import Transform
 
 
 class Compose(nn.Module):

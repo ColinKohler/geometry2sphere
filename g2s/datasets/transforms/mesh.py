@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Sequence, Tuple, List
 
-from o2s.datasets.transforms._base import Transform
+from g2s.datasets.transforms._base import Transform
 
 
 class MeshNormalize(Transform):

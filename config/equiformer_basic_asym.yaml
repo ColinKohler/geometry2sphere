@@ -3,67 +3,65 @@
 # defaults:
 #   - _self_
 #   - data: radar
-#   - module: rem
+#   - module: g2s 
 #   - trainer: default
 
 experiment_name: basic_asym 
-#ROOT_DATA_PATH: '/home/colin/hdd/workspace/object2sphere/datasets'
-#RESULTS_PATH: '/home/colin/hdd/workspace/object2sphere/datasets/out'
-ROOT_DATA_PATH: '/home/gridsan/ckohler/workspace/object2sphere/datasets'
-RESULTS_PATH: '/home/gridsan/ckohler/workspace/object2sphere/datasets/out'
+ROOT_DATA_PATH: 'geometry2sphere/datasets'
+RESULTS_PATH: 'geometry2sphere/datasets/out'
 batch_size: 16
 num_workers: 12
 
 train_dataset:
-  _target_: o2s.datasets.radar_dataset.RadarDataset
+  _target_: g2s.datasets.radar_dataset.RadarDataset
   root: ${ROOT_DATA_PATH}/train_radar.nc 
   stage: train
   mesh_mode: simple
   orientation_mode: full 
   transform:
-    _target_: o2s.datasets.transforms.general.Compose
+    _target_: g2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: o2s.datasets.transforms.radar.Abs
-      - _target_: o2s.datasets.transforms.radar.Log
-      - _target_: o2s.datasets.transforms.radar.Center
+      - _target_: g2s.datasets.transforms.radar.Abs
+      - _target_: g2s.datasets.transforms.radar.Log
+      - _target_: g2s.datasets.transforms.radar.Center
         mean: -3.5158
         std: 1.1688
 
 val_dataset:
-  _target_: o2s.datasets.radar_dataset.RadarDataset
+  _target_: g2s.datasets.radar_dataset.RadarDataset
   root: ${ROOT_DATA_PATH}/test_radar.nc 
   stage: val
   mesh_mode: simple
   orientation_mode: full
   transform:
-    _target_: o2s.datasets.transforms.general.Compose
+    _target_: g2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: o2s.datasets.transforms.radar.Abs
-      - _target_: o2s.datasets.transforms.radar.Log
-      - _target_: o2s.datasets.transforms.radar.Center
+      - _target_: g2s.datasets.transforms.radar.Abs
+      - _target_: g2s.datasets.transforms.radar.Log
+      - _target_: g2s.datasets.transforms.radar.Center
         mean: -3.5158
         std: 1.1688
 
 test_dataset:
-  _target_: o2s.datasets.radar_dataset.RadarDataset
+  _target_: g2s.datasets.radar_dataset.RadarDataset
   root: ${ROOT_DATA_PATH}/test_radar.nc  
   stage: test
   mesh_mode: simple
   orientation_mode: full 
   transform:
-    _target_: o2s.datasets.transforms.general.Compose
+    _target_: g2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: o2s.datasets.transforms.radar.Abs
-      - _target_: o2s.datasets.transforms.radar.Log
-      - _target_: o2s.datasets.transforms.radar.Center
+      - _target_: g2s.datasets.transforms.radar.Abs
+      - _target_: g2s.datasets.transforms.radar.Log
+      - _target_: g2s.datasets.transforms.radar.Center
         mean: -3.5158
         std: 1.1688
 
 module:
-  _target_: o2s.lightning.rem.REMLightningModule
+  _target_: g2s.lightning.g2s.G2SLightningModule
 
   backbone: 
-    _target_: o2s.models.equiformer.EquiformerDecoder
+    _target_: g2s.models.equiformer.EquiformerDecoder
     lmax: 3
     latent_feat_dim: 128
     max_radius: 10.0
@@ -74,7 +72,7 @@ module:
     num_phi: 21
 
   criterion:
-    _target_: o2s.lightning.rem.SoftmaxWeightedMSELoss
+    _target_: g2s.lightning.g2s.SoftmaxWeightedMSELoss
     reduction: sum
 
   optim:

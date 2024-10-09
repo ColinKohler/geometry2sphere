@@ -17,8 +17,8 @@ from dataclasses import asdict
 from torch.nn.utils.rnn import pad_sequence
 
 
-from o2s.datasets._typing import TransformerXarrayMeshData
-from o2s.datasets.mesh_dataset import MeshXarrayDataset
+from g2s.datasets._typing import TransformerXarrayMeshData
+from g2s.datasets.mesh_dataset import MeshXarrayDataset
 
 
 class RadarDataset(MeshXarrayDataset):

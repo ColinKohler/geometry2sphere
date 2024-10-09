@@ -10,7 +10,7 @@ from e3nn import nn as enn
 from e3nn import o3
 from e3nn.nn import SO3Activation
 
-from o2s.models import e3nn_utils
+from g2s.models import e3nn_utils
 
 
 class MLP(nn.Module):

@@ -11,11 +11,12 @@ from omegaconf import ListConfig
 from pytorch_lightning.loggers import MLFlowLogger
 from torch import nn
 
-from o2s.lightning.lr_scheduler import get_cosine_schedule_with_warmup, cosinewithWarmUp
-from o2s.typing import OptimDict, PartialOptimDict
+from g2s.lightning.lr_scheduler import get_cosine_schedule_with_warmup, cosinewithWarmUp
+from g2s.typing import OptimDict, PartialOptimDict
 import logging
 
 log = logging.getLogger(__name__)
+
 
 class _BaseModule(ABC):
     backbone: nn.Module
@@ -27,12 +28,7 @@ class _BaseModule(ABC):
         return self.backbone(batch, **kwargs)
 
     @abstractmethod
-    def calculate_losses(
-        self,
-        batch: Dict[str, Tensor],
-        stage: str,
-        **kwargs
-    ):
+    def calculate_losses(self, batch: Dict[str, Tensor], stage: str, **kwargs):
         pass
 
     def training_step(self, batch, _):
@@ -52,7 +48,7 @@ class _BaseModule(ABC):
             poses=batch[1],
             target_range_profile=batch[2],
             label=batch[3],
-            segments=batch[4]
+            segments=batch[4],
         )
 
     def save_metrics(self):
@@ -72,11 +68,14 @@ class _BaseModule(ABC):
             if "lr_scheduler" in self.optim:
                 if isinstance(self.optim["lr_scheduler"], cosinewithWarmUp):
                     num_train_steps, num_warmup_steps = self.compute_warmup(
-                        num_training_steps=-1, num_warmup_steps=self.optim["lr_scheduler"].num_warmup_steps
+                        num_training_steps=-1,
+                        num_warmup_steps=self.optim["lr_scheduler"].num_warmup_steps,
                     )
                     print(f"No. warmup steps: {num_warmup_steps}")
                     lr_scheduler = get_cosine_schedule_with_warmup(
-                        optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_train_steps
+                        optimizer,
+                        num_warmup_steps=num_warmup_steps,
+                        num_training_steps=num_train_steps,
                     )
                 elif self.optim["lr_scheduler"] is not None:
                     lr_scheduler = self.optim["lr_scheduler"](optimizer)
@@ -87,7 +86,9 @@ class _BaseModule(ABC):
 
             return opt
 
-    def compute_warmup(self, num_training_steps: int, num_warmup_steps: Union[int, float]) -> Tuple[int, int]:
+    def compute_warmup(
+        self, num_training_steps: int, num_warmup_steps: Union[int, float]
+    ) -> Tuple[int, int]:
         if num_training_steps < 0:
             # less than 0 specifies to infer number of training steps
             num_training_steps = self.num_training_steps

@@ -7,9 +7,9 @@ import torch.nn.functional as F
 from e3nn import nn as enn
 from e3nn import o3
 
-from o2s.models import e3nn_utils
-from o2s.models.modules import MLP, SphericalCNN
-from o2s.models.encoders.equiformerv2.equiformerv2 import Equiformerv2
+from g2s.models import e3nn_utils
+from g2s.models.modules import MLP, SphericalCNN
+from g2s.models.encoders.equiformerv2.equiformerv2 import Equiformerv2
 
 
 class EquiformerDecoder(nn.Module):

@@ -5,20 +5,20 @@ import torch as tr
 from torch import Tensor, nn
 from torchmetrics import MeanSquaredError, MetricCollection
 
-from o2s.metrics.metrics import (
+from g2s.metrics.metrics import (
     calculated_base_matching_score,
     maxima_matching_score,
     calculated_peak_matching_score,
 )
 
-from o2s.typing import PartialOptimDict
-from o2s.lightning._base import _BaseModule
+from g2s.typing import PartialOptimDict
+from g2s.lightning._base import _BaseModule
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class REMLightningModule(_BaseModule, pl.LightningModule):
+class DragLightningModule(_BaseModule, pl.LightningModule):
     def __init__(
         self,
         *,
@@ -57,10 +57,12 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
         return loss
 
     def calculate_equivariant_loss(self, batch, stage, advanced_metrics, ks):
-        data, target = batch
-        B, R, T, P = target.shape
+        data, flight_conds, coords, target = batch
+        # target = batch["data"]
+        B = target.size(0)
 
-        pred, _ = self.forward(data)
+        pred, _ = self.forward((data, flight_conds, coords))
+        # pred, _ = self.forward(batch)
 
         loss = 0
         mse = 0
@@ -91,76 +93,19 @@ class REMLightningModule(_BaseModule, pl.LightningModule):
             prog_bar=True,
         )
 
-        if advanced_metrics:
-            base_score = 0
-            maxima_val_score, maxima_dist_score = [0 for k in ks], [0 for k in ks]
-            peak_val_score, peak_dist_score = [0 for k in ks], [0 for k in ks]
-            base_score += calculated_base_matching_score(target, pred)
-
-            for i, k in enumerate(ks):
-                mvs, mds = maxima_matching_score(target, pred, k=k)
-                pvs, pds = calculated_peak_matching_score(target, pred, max_num_peaks=k)
-                maxima_val_score[i] += mvs
-                maxima_dist_score[i] += mds
-                peak_val_score[i] += pvs
-                peak_dist_score[i] += pds
-
-            self.log(
-                f"{stage}/base_score",
-                base_score,
-                sync_dist=True,
-                on_epoch=True,
-                on_step=False,
-                batch_size=B,
-            )
-            for i, k in enumerate(ks):
-                self.log(
-                    f"{stage}/maxima_val_score_k{k}",
-                    maxima_val_score[i],
-                    sync_dist=True,
-                    on_epoch=True,
-                    on_step=False,
-                    batch_size=B,
-                )
-                self.log(
-                    f"{stage}/maxima_dist_score_k{k}",
-                    maxima_dist_score[i],
-                    sync_dist=True,
-                    on_epoch=True,
-                    on_step=False,
-                    batch_size=B,
-                )
-                self.log(
-                    f"{stage}/peak_val_score_k{k}",
-                    peak_val_score[i],
-                    sync_dist=True,
-                    on_epoch=True,
-                    on_step=False,
-                    batch_size=B,
-                )
-                self.log(
-                    f"{stage}/peak_dist_score_k{k}",
-                    peak_dist_score[i],
-                    sync_dist=True,
-                    on_epoch=True,
-                    on_step=False,
-                    batch_size=B,
-                )
-
         return loss
 
 
 class SoftmaxWeightedMSELoss(nn.Module):
-    def __init__(self, temp=1.0, reduction="sum"):
+    def __init__(self, reduction="sum"):
         super().__init__()
-        self.temp = temp
         self.reduction = reduction
 
     def forward(self, pred, target):
         B, R, T, P = target.shape
-        weight = nn.functional.softmax(
-            target.reshape(B * R, -1) / self.temp, dim=1
-        ).reshape(B, R, T, P)
+        weight = nn.functional.softmax(target.reshape(B * R, -1), dim=1).reshape(
+            B, R, T, P
+        )
         loss = weight * (pred - target) ** 2
 
         weighted_mse_loss = (loss / (B * R * T * P)).sum()
@@ -169,3 +114,12 @@ class SoftmaxWeightedMSELoss(nn.Module):
 
         loss = weighted_mse_loss + mse_loss
         return loss
+
+
+class MSELoss(nn.Module):
+    def __init__(self, reduction="sum"):
+        super().__init__()
+        self.reduction = reduction
+
+    def forward(self, pred, target):
+        return nn.functional.mse_loss(pred.squeeze(), target.squeeze())

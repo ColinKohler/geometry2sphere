@@ -3,61 +3,61 @@
 # defaults:
 #   - _self_
 #   - data: radar
-#   - module: rem
+#   - module: g2s 
 #   - trainer: default
 
 experiment_name: drag 
-ROOT_DATA_PATH: '/home/colin/hdd/workspace/object2sphere/datasets'
-RESULTS_PATH: '/home/colin/hdd/workspace/object2sphere/datasets/out'
+ROOT_DATA_PATH: 'geometry2sphere/datasets'
+RESULTS_PATH: 'geometry2sphere/datasets/out'
 batch_size: 16
 num_workers: 12
 
 train_dataset:
-  _target_: o2s.datasets.transformer_drag_dataset.DragDataset
+  _target_: g2s.datasets.transformer_drag_dataset.DragDataset
   root: ${ROOT_DATA_PATH}/drag_pods/
   stage: train
   transform:
-    _target_: o2s.datasets.transforms.general.Compose
+    _target_: g2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: o2s.datasets.transforms.radar.Normalize
+      - _target_: g2s.datasets.transforms.radar.Normalize
         data_min: -0.06614039
         data_max: 0.1890188
         target_min: -1.0
         target_max: 1.0
 
 val_dataset:
-  _target_: o2s.datasets.transformer_drag_dataset.DragDataset
+  _target_: g2s.datasets.transformer_drag_dataset.DragDataset
   root: ${ROOT_DATA_PATH}/drag_pods/
   stage: val
   transform:
-    _target_: o2s.datasets.transforms.general.Compose
+    _target_: g2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: o2s.datasets.transforms.radar.Normalize
+      - _target_: g2s.datasets.transforms.radar.Normalize
         data_min: -0.06614039
         data_max: 0.1890188
         target_min: -1.0
         target_max: 1.0
 
 test_dataset:
-  _target_: o2s.datasets.transformer_drag_dataset.DragDataset
+  _target_: g2s.datasets.transformer_drag_dataset.DragDataset
   root: ${ROOT_DATA_PATH}/drag_pods/
   stage: test
   transform:
-    _target_: o2s.datasets.transforms.general.Compose
+    _target_: g2s.datasets.transforms.general.Compose
     transforms:
-      - _target_: o2s.datasets.transforms.radar.Normalize
+      - _target_: g2s.datasets.transforms.radar.Normalize
         data_min: -0.06614039
         data_max: 0.1890188
         target_min: -1.0
         target_max: 1.0
 
 module:
-  _target_: o2s.lightning.drag.DragLightningModule
+  _target_: g2s.lightning.drag.DragLightningModule
 
   backbone: 
-    _target_: o2s.models.baseline_transformer.MeshTransformerSimulator
+    _target_: g2s.models.baseline_transformer.MeshTransformerSimulator
     mesh_embedder:
-      _target_: o2s.models.baseline_transformer.MeshEmbeddingLayer
+      _target_: g2s.models.baseline_transformer.MeshEmbeddingLayer
     n_layers: 4
     n_heads: 4
     num_range_gates: 1
@@ -66,7 +66,7 @@ module:
     drag_prediction_parameters: 1
 
   criterion:
-    _target_: o2s.lightning.drag.MSELoss
+    _target_: g2s.lightning.drag.MSELoss
     reduction: mean
 
   optim:
