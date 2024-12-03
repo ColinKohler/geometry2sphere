@@ -7,8 +7,8 @@ import torch.nn.functional as F
 from e3nn import nn as enn
 from e3nn import o3
 
-from torch_harmonics.spherical_harmonics_old import SphericalHarmonics
-from torch_harmonics.spherical_harmonics_mlp import SphericalHarmonics as SHMLP
+from eharmony.spherical_harmonics_old import SphericalHarmonics
+from eharmony.spherical_harmonics_mlp import SphericalHarmonics as SHMLP
 
 from g2s.models import e3nn_utils
 from g2s.models.modules import MLP, S2MLP, SphericalCNN
