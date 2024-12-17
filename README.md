@@ -30,6 +30,12 @@ python scripts/train.py --config-name=g2s_basic_asym.yaml
 ```
 Additional config files can be found in `geometry2sphere/config`.
 
+## Adding New Datassets
+In order to train G2S on a new dataset or task there are a few steps.
+1. Create a new Torch Dataset similar to `g2s/datasets/radar_dataset.py` which loads the object geometries and spherical targets.
+2. Create a new config file specifying the dataset, G2S hyperparameters, and training parameters. See `config/g2s_frusta.yaml` for additional details.
+3. Train the model using `scripts/train.py` specifying the new config file.
+
 ## Cite
 
 ## Disclaimer
