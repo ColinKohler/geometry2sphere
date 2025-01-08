@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from e3nn import nn as enn
 from e3nn import o3
 
-from eharmony.spherical_harmonics_old import SphericalHarmonics
+from eharmony.spherical_harmonics import SphericalHarmonics
 from eharmony.spherical_harmonics_mlp import SphericalHarmonics as SHMLP
 
 from g2s.models import e3nn_utils
@@ -34,10 +34,13 @@ class Mesh2Radar(nn.Module):
         max_radius: float,
         num_out_spheres: int = 1,
         use_mlp: bool = True,
+        mlp_hidden_dim: list = None,
         num_layers_equivformer: int = 4,
         num_heads_equivformer: int = 4,
         num_theta: int = 1,
         num_phi: int = 1,
+        s_cnn_lmaxs: list = None,
+        s_cnn_feat_dims: list = None
     ):
         super().__init__()
 
@@ -62,24 +65,28 @@ class Mesh2Radar(nn.Module):
             lmax_list=[latent_lmax],
             max_radius=max_radius,
         )
-
-        self.spherical_cnn = SphericalCNN(
-            [
+        if s_cnn_lmaxs is None:
+            s_cnn_lmaxs =[
                 latent_lmax,
                 5,
                 10,
                 20,
                 output_lmax,
                 output_lmax,
-            ],
-            [
+            ] 
+        
+        if s_cnn_feat_dims is None:
+            s_cnn_feat_dims = [
                 latent_feat_dim,
                 64,
                 32,
                 16,
                 num_out_spheres,
                 num_out_spheres,
-            ],
+            ]
+             
+        self.spherical_cnn = SphericalCNN(
+           s_cnn_lmaxs, s_cnn_feat_dims,
         )
 
         self.sh = SphericalHarmonics(
@@ -91,7 +98,9 @@ class Mesh2Radar(nn.Module):
 
         self.use_mlp = use_mlp
         if self.use_mlp:
-            self.mlp = MLP([num_out_spheres, num_out_spheres])
+            if mlp_hidden_dim is None:
+                mlp_hidden_dim = [num_out_spheres, num_out_spheres]
+            self.mlp = MLP(mlp_hidden_dim)
 
     def forward(self, x):
         B = x.batch_size

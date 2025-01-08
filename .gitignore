@@ -6,6 +6,8 @@ outputs/
 *.gif
 *.mp4
 mlruns/
+sbatch_outputs/
+*.sbatch
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

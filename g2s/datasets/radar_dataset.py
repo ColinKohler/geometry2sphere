@@ -99,7 +99,7 @@ class RadarDataset(MeshXarrayDataset):
         )
         response = data.data.permute(2, 0, 1).float()
         response = torch.roll(response, response.size(1) // 2, 1)
-        response = response[20:-20:1]
+        # response = response[20:-20:1]
         # response = F.interpolate(
         #    response.view(107, 1, 61, 21), scale_factor=4, mode="bilinear"
         # )
